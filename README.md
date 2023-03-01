@@ -14,3 +14,5 @@ CourseWebsite (MINC) dataset is proprietary and cannot be released. The BusTrack
 
 The version of the BusTracker dataset we used is available at
 * https://www.dropbox.com/s/umqj1dnc7bhvpcw/BusTracker.zip?dl=0
+
+Pre-created SQL frgment vectors for the BusTracker dataset are available in BusTracker/InputOutput/MincBitFragmentIntentSessions
