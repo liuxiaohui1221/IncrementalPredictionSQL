@@ -13,4 +13,4 @@ This codebase was written in Python 2.7 and requires the SQL fragment bit-vector
 CourseWebsite (MINC) dataset is proprietary and cannot be released. The BusTracker dataset is from an earlier work http://www.cs.cmu.edu/~malin199/data/tiramisu-sample/ 
 
 The version of the BusTracker dataset we used is available at
-* https://www.dropbox.com/s/twvsb5f8zj7vqol/BusTracker.zip?dl=0
+* https://www.dropbox.com/s/umqj1dnc7bhvpcw/BusTracker.zip?dl=0
