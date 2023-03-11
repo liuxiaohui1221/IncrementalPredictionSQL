@@ -6,7 +6,7 @@ This codebase was written in Python 2.7 and requires the SQL fragment bit-vector
 
 * QLearning.py: This code uses tabular version of Q-Learning to predict the SQL fragments
 * QLearning_selOpConst.py: This code uses Q-Learning to predict SQL fragment vectors with constant bins
-* LSTM_RNN_Parallel.py and LSTM_RNN_Parallel_selOpConst.py contain LSTM and RNN-based implementation. Setting RNN_PREDICT_NOVEL_QUERIES=True and RNN_NOVEL_FIX_SQL_VIOLATIONS=True is equivalent to using synthesis-based RNNs described in our paper. Setting them to False invokes the historical RNN baselines.
+* LSTM_RNN_Parallel.py and LSTM_RNN_Parallel_selOpConst.py contain LSTM and RNN-based implementation. Setting RNN_PREDICT_NOVEL_QUERIES=True and RNN_NOVEL_FIX_SQL_VIOLATIONS=True invokes synthesis-based RNNs described in our paper. Setting these parameters to False invokes the historical RNN baselines.
 * CFCosineSim_Parallel.py and CF_SVD_selOpConst.py contain the cosine similarity-based and SVD-based implementation
 * configDir contains the config files and scripts folder contains the shell scripts to run the query predictors
 
