@@ -133,7 +133,7 @@ def printQTable(qTable, queryVocabValOrder):
     for key in queryVocabValOrder:
         line = str(key)+":"
         line += str(qTable[key])+"\n"
-        print line
+        print(line)
     return
 
 def assignReward(startDistinctSessQueryID, endDistinctSessQueryID, qObj):
@@ -165,7 +165,8 @@ def assignReward(startDistinctSessQueryID, endDistinctSessQueryID, qObj):
 
 def refineQTableUsingBellmanUpdate(qObj):
     assert len(qObj.queryVocab) == len(qObj.queryVocabValOrder)
-    print "Number of distinct queries: "+str(len(qObj.queryVocab))+", #cells in QTable: "+str(int(len(qObj.queryVocab)*len(qObj.queryVocab)))
+    print("Number of distinct queries: "+str(len(qObj.queryVocab))+", #cells in QTable: "+str(int(len(
+        qObj.queryVocab)*len(qObj.queryVocab))))
     #print "Expected number of refinement iterations: max("+str(len(qObj.queryVocab))+","+str(int(configDict['QL_REFINE_ITERS']))+")"
     #numRefineIters = max(len(qObj.queryVocab), int(configDict['QL_REFINE_ITERS']))
     # if len(qObj.queryVocab) * len(qObj.queryVocab)/10 <= int(configDict['QL_REFINE_ITERS']):
@@ -174,12 +175,12 @@ def refineQTableUsingBellmanUpdate(qObj):
         return # no experience replay
     #============== Following is the code for something analogous to experience replay ================
     numRefineIters = int(configDict['QL_REFINE_ITERS'])
-    print "Expected number of refinement iterations: " + str(numRefineIters)
+    print("Expected number of refinement iterations: " + str(numRefineIters))
     #else:
         #numRefineIters = min(len(qObj.queryVocab) * len(qObj.queryVocab) / 100, int(configDict['QL_REFINE_ITERS']))
     for i in range(numRefineIters):
         if i%100 == 0:
-            print "Refining using Bellman update, Iteration:"+str(i)
+            print("Refining using Bellman update, Iteration:"+str(i))
         # pick a random start and end sessQueryID pair within the vocabulary in queryVocabValOrder
         startSessQueryIndex = random.randrange(len(qObj.queryVocabValOrder))
         endSessQueryIndex = random.randrange(len(qObj.queryVocabValOrder))
@@ -201,7 +202,7 @@ def predictTopKIntents(threadID, qTable, queryVocabValOrder, sessQueryID, sessio
     #print "maxSimSessQueryID: "+str(maxSimSessQueryID)+", topKIndices: "+str(topKIndices)+", topKSessQueryIndices: "+str(topKSessQueryIndices)
     return topKSessQueryIndices
 
-def predictTopKIntentsPerThread((threadID, t_lo, t_hi, keyOrder, qTable, resList, queryVocabValOrder, sessionStreamDict, configDict)):
+def predictTopKIntentsPerThread(threadID, t_lo, t_hi, keyOrder, qTable, resList, queryVocabValOrder, sessionStreamDict, configDict):
     #printQTable(qTable, queryVocabValOrder)
     #print "QueryVocabValOrder:"+str(queryVocabValOrder)
     for i in range(t_lo, t_hi+1):
@@ -215,7 +216,7 @@ def predictTopKIntentsPerThread((threadID, t_lo, t_hi, keyOrder, qTable, resList
             for sessQueryID in topKSessQueryIndices:
                 #print "Length of sample: "+str(len(sessionSampleDict[int(sessQueryID.split(",")[0])]))
                 if sessQueryID not in sessionStreamDict:
-                    print "sessQueryID: "+sessQueryID+" not in sessionStreamDict !!"
+                    print("sessQueryID: "+sessQueryID+" not in sessionStreamDict !!")
                     sys.exit(0)
             #print "ThreadID: "+str(threadID)+", computed Top-K="+str(len(topKSessQueryIndices))+\
             #      " Candidates sessID: " + str(sessID) + ", queryID: " + str(queryID)
@@ -282,7 +283,7 @@ def updateResultsToExcel(configDict, episodeResponseTimeDictName, outputIntentFi
     accThres = float(configDict['ACCURACY_THRESHOLD'])
     QR.evaluateQualityPredictions(outputIntentFileName, configDict, accThres,
                                   configDict['ALGORITHM']  + "_" + configDict['QL_BOOLEAN_NUMERIC_REWARD'])
-    print "--Completed Quality Evaluation for accThres:" + str(accThres)
+    print("--Completed Quality Evaluation for accThres:" + str(accThres))
     QR.evaluateTimePredictions(episodeResponseTimeDictName, configDict,
                                configDict['ALGORITHM'] + "_" + configDict['QL_BOOLEAN_NUMERIC_REWARD'])
 
@@ -319,11 +320,11 @@ def trainTestBatchWise(qObj):
         hi = lo + batchSize - 1
         elapsedAppendTime = 0.0
         # test first for each query in the batch if the classifier is not None
-        print "Starting prediction in Episode " + str(qObj.numEpisodes) + ", lo: " + str(lo) + ", hi: " + str(
-            hi) + ", len(keyOrder): " + str(len(qObj.keyOrder))
+        print("Starting prediction in Episode " + str(qObj.numEpisodes) + ", lo: " + str(lo) + ", hi: " + str(
+            hi) + ", len(keyOrder): " + str(len(qObj.keyOrder)))
         if len(qObj.queryVocab) > 2:  # unless at least two rows hard to recommend
             qObj.resultDict = predictIntentsWithoutCurrentBatch(lo, hi, qObj, qObj.keyOrder)
-        print "Starting training in Episode " + str(qObj.numEpisodes)
+        print("Starting training in Episode " + str(qObj.numEpisodes))
         startTrainTime = time.time()
         (qObj.sessionDict, qObj.queryKeysSetAside) = LSTM_RNN_Parallel.updateGlobalSessionDict(lo, hi, qObj.keyOrder,
                                                                               qObj.queryKeysSetAside, qObj.sessionDict)
@@ -333,7 +334,7 @@ def trainTestBatchWise(qObj):
             saveModelToFile(qObj)
             #printQTable(qObj.qTable, qObj.queryVocabValOrder) # only enabled for debugging purposes
         totalTrainTime = float(time.time() - startTrainTime)
-        print "Total Train Time: " + str(totalTrainTime)
+        print("Total Train Time: " + str(totalTrainTime))
         assert qObj.configDict['QL_INCREMENTAL_OR_FULL_TRAIN'] == 'INCREMENTAL' or qObj.configDict[
                                                                                           'QL_INCREMENTAL_OR_FULL_TRAIN'] == 'FULL'
         # we have empty queryKeysSetAside because we want to incrementally train the CF at the end of each episode
@@ -358,17 +359,18 @@ def loadModel(qObj):
     qObj.queryVocabValOrder = QR.readFromPickleFile(getConfig(configDict['OUTPUT_DIR']) + configDict['QL_BOOLEAN_NUMERIC_REWARD'] + "_QLQueryVocabValOrder.pickle")
     qObj.queryVocab = QR.readFromPickleFile(getConfig(configDict['OUTPUT_DIR']) + configDict['QL_BOOLEAN_NUMERIC_REWARD'] + "_QLQueryVocab.pickle")
     qObj.qTable = QR.readFromPickleFile(getConfig(configDict['OUTPUT_DIR']) + configDict['QL_BOOLEAN_NUMERIC_REWARD'] + "_QTable.pickle")
-    print "Loaded len(queryVocabValOrder): "+str(len(qObj.queryVocabValOrder))+"len(queryVocab): "+str(len(qObj.queryVocab))+", len(qObj.qTable): "+str(len(qObj.qTable))
+    print("Loaded len(queryVocabValOrder): "+str(len(qObj.queryVocabValOrder))+"len(queryVocab): "+str(len(
+        qObj.queryVocab))+", len(qObj.qTable): "+str(len(qObj.qTable)))
     notInQT = 0
     notInSessionStreamDict = 0
     for key in qObj.queryVocabValOrder:
         if key not in qObj.qTable:
-            print "key: "+key+" not in qObj.qTable"
+            print("key: "+key+" not in qObj.qTable")
             notInQT += 1
         if key not in qObj.sessionStreamDict:
-            print "key: "+key+" not in qObj.sessionStreamDict"
+            print("key: "+key+" not in qObj.sessionStreamDict")
             notInSessionStreamDict += 1
-    print "notInQT: "+str(notInQT)+", notInSessionStreamDict: "+str(notInSessionStreamDict)
+    print("notInQT: "+str(notInQT)+", notInSessionStreamDict: "+str(notInSessionStreamDict))
     return
 
 def trainEpisodicModelSustenance(episodicTraining, trainKeyOrder, qObj):
@@ -386,7 +388,7 @@ def trainEpisodicModelSustenance(episodicTraining, trainKeyOrder, qObj):
         if len(trainKeyOrder) - lo < batchSize:
             batchSize = len(trainKeyOrder) - lo
         hi = lo + batchSize - 1
-        print "Starting training in Episode " + str(numTrainEpisodes)
+        print("Starting training in Episode " + str(numTrainEpisodes))
         startTrainTime = time.time()
         if configDict['QL_SUSTENANCE_LOAD_EXISTING_MODEL'] == 'False':
             (qObj.sessionDict, qObj.queryKeysSetAside) = LSTM_RNN_Parallel.updateGlobalSessionDict(lo, hi, qObj.keyOrder,
@@ -398,7 +400,7 @@ def trainEpisodicModelSustenance(episodicTraining, trainKeyOrder, qObj):
                 saveModelToFile(qObj)
                 # printQTable(qObj.qTable, qObj.queryVocab) # only enabled for debugging purposes
         totalTrainTime = float(time.time() - startTrainTime)
-        print "Total Train Time: " + str(totalTrainTime)
+        print("Total Train Time: " + str(totalTrainTime))
         assert qObj.configDict['QL_INCREMENTAL_OR_FULL_TRAIN'] == 'INCREMENTAL' or qObj.configDict[
                                                                                        'QL_INCREMENTAL_OR_FULL_TRAIN'] == 'FULL'
         # we have empty queryKeysSetAside because we want to incrementally train the CF at the end of each episode
@@ -430,14 +432,14 @@ def testModelSustenance(testKeyOrder, qObj):
         hi = lo + batchSize - 1
         elapsedAppendTime = 0.0
         # test first for each query in the batch if the classifier is not None
-        print "Starting prediction in Episode " + str(qObj.numEpisodes) + ", lo: " + str(lo) + ", hi: " + str(
-            hi) + ", len(testKeyOrder): " + str(len(testKeyOrder))+ ", len(queryVocab): " +str(len(qObj.queryVocab))
+        print("Starting prediction in Episode " + str(qObj.numEpisodes) + ", lo: " + str(lo) + ", hi: " + str(
+            hi) + ", len(testKeyOrder): " + str(len(testKeyOrder))+ ", len(queryVocab): " +str(len(qObj.queryVocab)))
         if len(qObj.queryVocab) > 2:  # unless at least two rows hard to recommend
             qObj.resultDict = predictIntentsWithoutCurrentBatch(lo, hi, qObj, testKeyOrder)
             # we record the times including train and test
             qObj.numEpisodes += 1
             if len(qObj.resultDict) > 0:
-                print "appending results"
+                print("appending results")
                 elapsedAppendTime = CFCosineSim_Parallel.appendResultsToFile(qObj.sessionStreamDict, qObj.resultDict,
                                                                              elapsedAppendTime, qObj.numEpisodes,
                                                                              qObj.outputIntentFileName, qObj.configDict,
@@ -455,7 +457,7 @@ def evalSustenance(qObj):
     sustStartTrainTime = time.time()
     trainModelSustenance(trainKeyOrder, qObj)
     sustTotalTrainTime = float(time.time() - sustStartTrainTime)
-    print "Sustenace Train Time: "+str(sustTotalTrainTime)
+    print("Sustenace Train Time: "+str(sustTotalTrainTime))
     testModelSustenance(testKeyOrder, qObj)
 
 def runQLearning(configDict):

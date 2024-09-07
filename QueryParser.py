@@ -198,7 +198,7 @@ def rewriteHavingGroupByComplexQuery(sessQuery, selectList, projectList, groupBy
         colAlias = col.split(" AS ")[lenCol-1]
         colAliasList.append(colAlias)
     if projectList[parseLevel] not in sessQuery:
-        print ("Incorrect sessQuery with extra spaces !!")
+        print("Incorrect sessQuery with extra spaces !!")
         exit(0)
     tempQuery = sessQuery.replace(projectList[parseLevel], projectList[parseLevel] + " INTO TEMPTABLE")
     #tempQuery = "CREATE TABLE TEMPTABLE AS "+sessQuery
@@ -228,7 +228,7 @@ def rewriteQuery(sessQuery, selectList, projectList, groupByList, havingList, ta
         return None  # either one of HAVING or WHERE must be in the sessQuery, else every tuple ends up being a witness
     elif "WHERE" in sessQuery and "GROUP BY" not in sessQuery: #HAVING may or may not be in the query, does not change anything
         if projectList[parseLevel] not in sessQuery:
-            print ("Incorrect sessQuery with extra spaces !!")
+            print("Incorrect sessQuery with extra spaces !!")
             exit(0)
         newQuery = sessQuery.replace(projectList[parseLevel], projectList[parseLevel] + ", id")  # we are projecting id as well
         #projectList[parseLevel] = projectList[parseLevel] + ", id"
@@ -238,13 +238,13 @@ def rewriteQuery(sessQuery, selectList, projectList, groupByList, havingList, ta
         #newQuery = sessQuery.replace(projectList[parseLevel], "DISTINCT id")  # we are projecting id as well
     elif "WHERE" in sessQuery and "GROUP BY" in sessQuery and "HAVING" not in sessQuery:
         if projectList[parseLevel] not in sessQuery:
-            print ("Incorrect sessQuery with extra spaces !!")
+            print("Incorrect sessQuery with extra spaces !!")
             exit(0)
         newQuery = sessQuery.replace(projectList[parseLevel], projectList[parseLevel] + ", id")  # we are projecting id as well
         projectList[parseLevel] = projectList[parseLevel] + ", id"
         #numAttrsProjected = projectList[parseLevel].count(",")+1
         if groupByList[parseLevel] not in newQuery:
-            print ("Incorrect newQuery without groupBy list !!")
+            print("Incorrect newQuery without groupBy list !!")
             exit(0)
         #newQuery = newQuery.replace(groupByList[parseLevel], groupByList[parseLevel] + ", " + str(numAttrsProjected)) # we are grouping by id as well, via its index ID in the projections
         #groupByList[parseLevel] = groupByList[parseLevel] + ", " + str(numAttrsProjected)
@@ -282,7 +282,7 @@ def fetchRowIDs(sessQuery, configDict):
         tempQuery = newQuery.split(";")[0]
         QExec.executeQuery("drop table TEMPTABLE", configDict)
         QExec.executeQuery(tempQuery, configDict)
-        print ("successfully created temptable")
+        print("successfully created temptable")
         #QExec.executeQuery("select * from temptable", configDict)
         newQuery = newQuery.split(";")[1]
     cur = QExec.executeQuery(newQuery, configDict) # without intent
@@ -307,9 +307,9 @@ if __name__ == "__main__":
                 sessQuery = ' '.join(sessQuery.split())
                 #(newQuery, rowIDs) = fetchRowIDs(sessQuery, configDict)
                 newQuery = rewriteQueryForProvenance(sessQuery, configDict)
-                print (sessName+", Query "+str(i)+": \n")
-                print ("OrigQuery: "+sessQuery+"\n")
+                print(sessName+", Query "+str(i)+": \n")
+                print("OrigQuery: "+sessQuery+"\n")
                 if newQuery is not None:
-                    print ("Provenance Query: "+newQuery+"\n")
+                    print("Provenance Query: "+newQuery+"\n")
                 else:
-                    print ("Provenance Query: None\n")
+                    print("Provenance Query: None\n")

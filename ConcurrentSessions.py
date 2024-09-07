@@ -54,7 +54,7 @@ def createConcurrentSessions(inputFile, outputFile):
                 coveredSessQueries[sessIndex] += 1
             output_str="Session "+str(sessIndex)+", Query "+str(queryIndex)+";"+sessQuery
             ti.appendToFile(outputFile, output_str)
-            print "appended Session "+str(sessIndex)+", Query "+str(queryIndex)
+            print("appended Session "+str(sessIndex)+", Query "+str(queryIndex))
         else:
             keyList.remove(sessIndex)
 
@@ -70,14 +70,14 @@ def readTestSessIDs(inputSeqFile, configDict):
                 lineIndex+=1
         f.close()
     except:
-        print "error1"
+        print("error1")
     return sessIDs
 
 def convertSeqToConcFile(configDict):
-    inputConcFile = getConfig('Documents/DataExploration-Research/MINC/InputOutput/ClusterRuns/NovelTables-203087-8936Sess-307KModified/MincBitFragmentIntentSessions_Singularity')
-    inputSeqFile = getConfig('Documents/DataExploration-Research/MINC/InputOutput/ClusterRuns/NovelTables-203087-8936Sess-307KModified/MincBitFragmentIntentSessions_Sustenance_0.8')
-    concTrainFile = getConfig('Documents/DataExploration-Research/MINC/InputOutput/ClusterRuns/NovelTables-203087-8936Sess-307KModified/MincBitFragmentIntentSessions_ConcTrain_Sustenance_0.8')
-    concTestFile = getConfig('Documents/DataExploration-Research/MINC/InputOutput/ClusterRuns/NovelTables-203087-8936Sess-307KModified/MincBitFragmentIntentSessions_ConcTest_Sustenance_0.8')
+    inputConcFile = getConfig('data/MINC/InputOutput/ClusterRuns/NovelTables-203087-8936Sess-307KModified/MincBitFragmentIntentSessions_Singularity')
+    inputSeqFile = getConfig('data/MINC/InputOutput/ClusterRuns/NovelTables-203087-8936Sess-307KModified/MincBitFragmentIntentSessions_Sustenance_0.8')
+    concTrainFile = getConfig('data/MINC/InputOutput/ClusterRuns/NovelTables-203087-8936Sess-307KModified/MincBitFragmentIntentSessions_ConcTrain_Sustenance_0.8')
+    concTestFile = getConfig('data/MINC/InputOutput/ClusterRuns/NovelTables-203087-8936Sess-307KModified/MincBitFragmentIntentSessions_ConcTest_Sustenance_0.8')
     testSessIDs = readTestSessIDs(inputSeqFile, configDict)
     try:
         os.remove(concTrainFile)
@@ -97,7 +97,7 @@ def convertSeqToConcFile(configDict):
                     ti.appendToFile(concTrainFile, line.strip())
         f.close()
     except:
-        print "error2"
+        print("error2")
     return
 
 
@@ -108,4 +108,4 @@ if __name__ == "__main__":
     configDict = parseConfig.parseConfigFile(args.config)
     #convertSeqToConcFile(configDict)
     createConcurrentSessions(getConfig(configDict['QUERYSESSIONS']), getConfig(configDict['CONCURRENT_QUERY_SESSIONS']))
-    print "Completed concurrent session order creation"
+    print("Completed concurrent session order creation")

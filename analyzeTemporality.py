@@ -106,11 +106,12 @@ def analyzePR(configDict, logFile):
         for key in notEqualBinKeys:
             try:
                 notEqualBinVals.append(notEqualBinFreqDict[key])
-                print "key: "+str(key)+", val: "+str(notEqualBinFreqDict[key])
+                print("key: "+str(key)+", val: "+str(notEqualBinFreqDict[key]))
             except:
                 notEqualBinVals.append(0.0)
     avgDiffPR = float(avgDiffPR)/float(count)
-    print "numPREqualOne: "+str(numPREqualOne)+", numPREqualNotOne: "+str(numPREqualNotOne)+", numPRNotEqual: "+str(numPRNotEqual)+", avgDiffPR: "+str(avgDiffPR)
+    print("numPREqualOne: "+str(numPREqualOne)+", numPREqualNotOne: "+str(numPREqualNotOne)+", numPRNotEqual: "+str(
+        numPRNotEqual)+", avgDiffPR: "+str(avgDiffPR))
 
 
 if __name__ == "__main__":

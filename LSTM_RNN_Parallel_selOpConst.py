@@ -2,6 +2,9 @@ from __future__ import division
 import sys, operator
 import os
 import time
+
+from keras.utils import pad_sequences
+
 import QueryRecommender as QR
 from bitmap import BitMap
 import math
@@ -20,7 +23,6 @@ import tensorflow as tf
 from keras import backend as K
 from keras.datasets import imdb
 from keras.preprocessing import sequence
-from keras.preprocessing.sequence import pad_sequences
 from keras import regularizers
 from keras.callbacks import ModelCheckpoint
 from keras.models import Sequential
@@ -56,7 +58,7 @@ def createCharListFromIntent(intent, configDict):
     if configDict['BIT_OR_WEIGHTED'] == 'BIT':
         intentStr = intent.tostring()
         for i in range(len(intentStr)):
-            intentStrList.append(intentStr[i])
+            intentStrList.append(float(intentStr[i]))
     elif configDict['BIT_OR_WEIGHTED'] == 'WEIGHTED':
         intentStrList = intent.split(';')
     return intentStrList
@@ -90,6 +92,7 @@ def updateRNNIncrementalTrain(modelRNN, max_lookback, x_train, y_train, configDi
     (x_train, max_lookback_this) = perform_input_padding(x_train)
     y_train = np.array(y_train)
     batchSize = min(len(x_train), int(configDict['RNN_BATCH_SIZE']))
+    print("shape of x_train,y_train is ", x_train.shape,y_train.shape)
     modelRNN.fit(x_train, y_train, epochs=int(configDict['RNN_FULL_TRAIN_EPOCHS']), batch_size=batchSize)
     if max_lookback_this > max_lookback:
         max_lookback = max_lookback_this
@@ -151,9 +154,12 @@ def appendTrainingXY(sessionStreamDict, sessID, queryID, configDict, dataX, data
         prevIntent = sessIntentList[i]
         intentStrList = createCharListFromIntent(prevIntent, configDict)
         xList.append(intentStrList)
+        # print("intentStrList", intentStrList)
+        # dataX.append(np.array(intentStrList))
     yList = createCharListFromIntent(sessIntentList[numQueries-1], configDict)
-    dataX.append(xList)
-    dataY.append([yList])
+    dataX.append(np.array(xList))
+    dataY.append(np.array([yList]))
+    # print("dataX,dataY shape", np.array(dataX).shape, np.array(dataY).shape)
     return (dataX, dataY)
 
 
@@ -314,7 +320,7 @@ def singleThreadedTopKDetectionFull(predictedY, cosineSimDict, curSessID, curQue
     return cosineSimDict
 
 
-def multiThreadedTopKDetection((threadID, subThreadID, queryPartition, predictedY, curSessID, curQueryID, sessionDictCurThread, sessionStreamDict, configDict)):
+def multiThreadedTopKDetection(threadID, subThreadID, queryPartition, predictedY, curSessID, curQueryID, sessionDictCurThread, sessionStreamDict, configDict):
     assert configDict['RNN_QUERY_HISTORY_SAMPLE_OR_FULL'] == 'SAMPLE' or configDict['RNN_QUERY_HISTORY_SAMPLE_OR_FULL'] == 'FULL'
     if configDict['RNN_QUERY_HISTORY_SAMPLE_OR_FULL'] == 'FULL':
         return multiThreadedTopKDetectionFull((threadID, subThreadID, queryPartition, predictedY, curSessID, curQueryID, sessionDictCurThread, sessionStreamDict, configDict))
@@ -322,7 +328,7 @@ def multiThreadedTopKDetection((threadID, subThreadID, queryPartition, predicted
         return multiThreadedTopKDetectionSample((threadID, subThreadID, queryPartition, predictedY, sessionStreamDict, configDict))
 
 
-def multiThreadedTopKDetectionSample((threadID, subThreadID, queryPartition, predictedY, sessionStreamDict, configDict)):
+def multiThreadedTopKDetectionSample(threadID, subThreadID, queryPartition, predictedY, sessionStreamDict, configDict):
     localCosineSimDict = {}
     for sessQueryID in queryPartition:
         queryIntent = sessionStreamDict[sessQueryID]
@@ -334,7 +340,7 @@ def multiThreadedTopKDetectionSample((threadID, subThreadID, queryPartition, pre
     return localCosineSimDict
 
 
-def multiThreadedTopKDetectionFull((threadID, subThreadID, queryPartition, predictedY, curSessID, curQueryID, sessionDictCurThread, sessionStreamDict, configDict)):
+def multiThreadedTopKDetectionFull(threadID, subThreadID, queryPartition, predictedY, curSessID, curQueryID, sessionDictCurThread, sessionStreamDict, configDict):
     localCosineSimDict = {}
     for sessQueryID in queryPartition:
         sessID = sessQueryID.split(",")[0]
@@ -609,7 +615,7 @@ def updateTimeResultsToExcel(configDict, episodeResponseTimeDictName, outputInte
                               'BIT_OR_WEIGHTED'] + "_TOP_K_" + configDict['TOP_K'] + "_EPISODE_IN_QUERIES_" + \
                           configDict['EPISODE_IN_QUERIES'] + "_" + configDict['RNN_INCREMENTAL_OR_FULL_TRAIN'] + ".xlsx"
     ParseResultsToExcel.parseTimeFile(outputEvalTimeFileName, outputExcelTimeEval)
-    print "--Completed Quality and Time Evaluation--"
+    print("--Completed Quality and Time Evaluation--")
     return
 
 def updateQualityResultsToExcel(configDict, episodeResponseTimeDictName, outputIntentFileName):
@@ -627,10 +633,11 @@ def updateQualityResultsToExcel(configDict, episodeResponseTimeDictName, outputI
                              'BIT_OR_WEIGHTED'] + "_TOP_K_" + configDict['TOP_K'] + "_EPISODE_IN_QUERIES_" + configDict[
                              'EPISODE_IN_QUERIES'] + "_ACCURACY_THRESHOLD_" + str(accThres) + "_" + configDict[
                              'RNN_INCREMENTAL_OR_FULL_TRAIN'] + ".xlsx"
+    print("outputEvalQualityFileName:",outputEvalQualityFileName)
     ParseResultsToExcel.parseQualityFileWithEpisodeRep(outputEvalQualityFileName, outputExcelQuality, configDict)
 
 
-    print "--Completed Quality Evaluation for accThres:" + str(accThres)
+    print("--Completed Quality Evaluation for accThres:" + str(accThres))
     '''
     QR.evaluateTimePredictions(episodeResponseTimeDictName, configDict,
                                configDict['ALGORITHM'] + "_" + configDict["RNN_BACKPROP_LSTM_GRU"])
@@ -666,7 +673,7 @@ def updateResultsToExcel(configDict, episodeResponseTimeDictName, outputIntentFi
                              'EPISODE_IN_QUERIES'] + "_ACCURACY_THRESHOLD_" + str(accThres) + "_" + configDict[
                              'RNN_INCREMENTAL_OR_FULL_TRAIN'] + ".xlsx"
     ParseResultsToExcel.parseQualityFileWithEpisodeRep(outputEvalQualityFileName, outputExcelQuality, configDict)
-    print "--Completed Quality Evaluation for accThres:" + str(accThres)
+    print("--Completed Quality Evaluation for accThres:" + str(accThres))
 
     QR.evaluateTimePredictions(episodeResponseTimeDictName, configDict,
                                configDict['ALGORITHM'] + "_" + configDict["RNN_BACKPROP_LSTM_GRU"])
@@ -681,13 +688,20 @@ def updateResultsToExcel(configDict, episodeResponseTimeDictName, outputIntentFi
                           configDict['EPISODE_IN_QUERIES'] + "_" + configDict['RNN_INCREMENTAL_OR_FULL_TRAIN'] + ".xlsx"
     ParseResultsToExcel.parseTimeFile(outputEvalTimeFileName, outputExcelTimeEval)
 
-    print "--Completed Quality and Time Evaluation--"
+    print("--Completed Quality and Time Evaluation--")
     return
 
 def clear(resultDict):
-    keys = resultDict.keys()
-    for resKey in keys:
-        del resultDict[resKey]
+    # keys = resultDict.keys()
+    # for resKey in keys:
+    #     del resultDict[resKey]
+    # return resultDict
+    resultDict = {}
+    # for resKey in resultDict.keys():
+    #     new_dict[resKey] = resultDict[resKey]
+    # for resKey in resultDict.keys():
+    #     del resultDict[resKey]
+    # return new_dict
     return resultDict
 
 def compareBitMaps(bitMap1, bitMap2):
@@ -731,7 +745,8 @@ def updateSampledQueryHistory(configDict, sampledQueryHistory, queryKeysSetAside
                 sampledQueryHistory[hexDigestKey] = sessQueryID
                 curIndex += batchSize
                 covered += 1
-    print "len(distinctQueries): "+str(len(distinctQueries))+", len(sampledQueryHistory): "+str(len(sampledQueryHistory))
+    print("len(distinctQueries): "+str(len(distinctQueries))+", len(sampledQueryHistory): "+str(len(
+        sampledQueryHistory)))
     return sampledQueryHistory
 
 def saveModel(modelRNN, sessionDictGlobal, sampledQueryHistory, max_lookback, configDict):
@@ -811,7 +826,7 @@ def trainModelSustenance(episodic, trainKeyOrder, sampledQueryHistory, queryKeys
             batchSize = len(trainKeyOrder) - lo
         hi = lo + batchSize - 1
 
-        print "Starting training in Episode " + str(numTrainEpisodes)
+        print("Starting training in Episode " + str(numTrainEpisodes))
         # update SessionDictGlobal and train with the new batch
         (sessionDictGlobal, queryKeysSetAside) = updateGlobalSessionDict(lo, hi, trainKeyOrder, queryKeysSetAside,
                                                                          sessionDictGlobal)
@@ -845,8 +860,8 @@ def testModelSustenance(testKeyOrder, schemaDicts, sampledQueryHistory, startEpi
         elapsedAppendTime = 0.0
 
         # test first for each query in the batch if the classifier is not None
-        print "Starting prediction in Episode " + str(numEpisodes) + ", lo: " + str(lo) + ", hi: " + str(
-            hi) + ", len(keyOrder): " + str(len(testKeyOrder))
+        print("Starting prediction in Episode " + str(numEpisodes) + ", lo: " + str(lo) + ", hi: " + str(
+            hi) + ", len(keyOrder): " + str(len(testKeyOrder)))
         if modelRNN is not None:
             assert configDict['INCLUDE_CUR_SESS'] == 'True' or configDict['INCLUDE_CUR_SESS'] == 'False'
             if configDict['INCLUDE_CUR_SESS'] == 'True':
@@ -882,7 +897,7 @@ def evalSustenance(keyOrder, schemaDicts, sampledQueryHistory, queryKeysSetAside
     elif configDict['RNN_SUSTENANCE_LOAD_EXISTING_MODEL'] == 'True':
         (modelRNN, sessionDictGlobal, sampledQueryHistory, max_lookback) = loadModelSustenance(configDict)
     sustTotalTrainTime = float(time.time() - sustStartTrainTime)
-    print "Sustenace Train Time: " + str(sustTotalTrainTime)
+    print("Sustenace Train Time: " + str(sustTotalTrainTime))
     testModelSustenance(testKeyOrder, schemaDicts, sampledQueryHistory, startEpisode, numEpisodes, episodeResponseTimeDictName, episodeResponseTime, outputIntentFileName, resultDict, sessionDictGlobal, sessionDictsThreads, sessionStreamDict, sessionLengthDict, modelRNN, max_lookback, configDict)
     return
 
@@ -898,7 +913,9 @@ def trainTestBatchWise(keyOrder, schemaDicts, sampledQueryHistory, queryKeysSetA
         elapsedAppendTime = 0.0
 
         # test first for each query in the batch if the classifier is not None
-        print "Starting prediction in Episode "+str(numEpisodes)+", lo: "+str(lo)+", hi: "+str(hi)+", len(keyOrder): "+str(len(keyOrder))
+        print("Starting prediction in Episode "+str(numEpisodes)+", lo: "+str(lo)+", hi: "+str(hi)+", len(keyOrder): "
+                                                                                                   ""+str(len(
+            keyOrder)))
         if modelRNN is not None:
             assert configDict['INCLUDE_CUR_SESS'] == 'True' or configDict['INCLUDE_CUR_SESS'] == 'False'
             if configDict['INCLUDE_CUR_SESS'] == 'True':
@@ -906,7 +923,7 @@ def trainTestBatchWise(keyOrder, schemaDicts, sampledQueryHistory, queryKeysSetA
             else:
                 resultDict = predictIntentsWithoutCurrentBatch(lo, hi, keyOrder, schemaDicts, resultDict, sessionDictGlobal, sampledQueryHistory, sessionStreamDict, sessionLengthDict, modelRNN, max_lookback, configDict)
 
-        print "Starting training in Episode " + str(numEpisodes)
+        print("Starting training in Episode " + str(numEpisodes))
         # update SessionDictGlobal and train with the new batch
         (sessionDictGlobal, queryKeysSetAside) = updateGlobalSessionDict(lo, hi, keyOrder, queryKeysSetAside, sessionDictGlobal)
         if configDict['RNN_PREDICT_NOVEL_QUERIES'] == 'False':
@@ -1077,7 +1094,7 @@ def runRNNKFoldExp(configDict):
         schemaDicts = ReverseEnggQueries.readSchemaDicts(configDict)
     else:
         schemaDicts = ReverseEnggQueries_selOpConst.readSchemaDicts(configDict)
-    print "Num Folds to Run: "+str(int(configDict['NUM_FOLDS_TO_RUN']))
+    print("Num Folds to Run: "+str(int(configDict['NUM_FOLDS_TO_RUN'])))
     for foldID in range(int(configDict['NUM_FOLDS_TO_RUN'])):
         outputIntentFileName = getConfig(configDict['KFOLD_OUTPUT_DIR']) + "/OutputFileShortTermIntent_" + algoName + "_" + \
                                configDict['INTENT_REP'] + "_" + configDict['BIT_OR_WEIGHTED'] + "_TOP_K_" + \

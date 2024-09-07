@@ -3,10 +3,10 @@
 ### Creating the feature vectors for NYCTaxiTrips ###
 
 # 0) Step 0: Creating the raw logs from Tableau -- appending new queries to existing queries
-python NYCSessionLogCreation.py # (this python file is in ~/Documents/DataExploration-Research/CreditCardDataset)
+python NYCSessionLogCreation.py # (this python file is in ~/data/CreditCardDataset)
 
 # 1) Step 1: Creating cleaned sessions from the raw logs
-python cleanQuerySessions.py -input /Users/postgres/Documents/DataExploration-Research/CreditCardDataset/NYCOutputSessionLog -output /Users/postgres/Documents/DataExploration-Research/CreditCardDataset/NYCCleanedSessions
+python cleanQuerySessions.py -input /Users/postgres/data/CreditCardDataset/NYCOutputSessionLog -output /Users/postgres/data/CreditCardDataset/NYCCleanedSessions
 
 # 2) Step 2: Creating concurrent sessions from cleaned sessions
 python ConcurrentSessions.py -config configFile.txt # configFile.txt contains the NYCTaxiTrips config parameters
@@ -38,7 +38,7 @@ mvn exec:java -Dexec.mainClass="MINCFragmentIntent"
 # This requires you use the python code from IntentPredictionEval
 
 # First copy all the sequential session files from TempOutput to BakOutput folder
-cp ~/Documents/DataExploration-Research/MINC/InputOutput/TempOutput/* ~/Documents/DataExploration-Research/MINC/InputOutput/BakOutput/.
+cp ~/data/MINC/InputOutput/TempOutput/* ~/data/MINC/InputOutput/BakOutput/.
 
 # Next run the following command from IntentPredictionEval directory for source code
 python MINC_FragmentIntent.py -config configDir/MINC_FragmentQueries_Keep_configFile.txt
@@ -72,15 +72,15 @@ Created intent vectors for # Sessions: 43892 and # Queries: 114607
 
 ## 2) Step 2: You can run two kinds of experiments with this -- singularity or sustenance (schemaDicts are assumed to have been created)
 # Create a folder for this new dataset in InputOutput/ClusterRuns/
-mkdir ~/Documents/DataExploration-Research/MINC/InputOutput/ClusterRuns/NovelTables-114607-Constants
+mkdir ~/data/MINC/InputOutput/ClusterRuns/NovelTables-114607-Constants
 
 # 3) Step 3: Copy feature vectors (full and for tabels alone) MincBitFragmentIntentSessions and MincBitFragmentTableIntentSessions just created to the new folder
 # The feature vectors created here will be used for Singularity Experiments
-cp ~/Documents/DataExploration-Research/MINC/InputOutput/MincBitFragment* ClusterRuns/NovelTables-114607-Constants/.
-mv ~/Documents/DataExploration-Research/MINC/InputOutput/ClusterRuns/NovelTables-114607-Constants/MincBitFragmentIntentSessions{,Singularity}
-mv ~/Documents/DataExploration-Research/MINC/InputOutput/ClusterRuns/NovelTables-114607-Constants/MincBitFragmentTableIntentSessions{,Singularity}
-cp ~/Documents/DataExploration-Research/MINC/InputOutput/MincQuerySessions ~/Documents/DataExploration-Research/MINC/InputOutput/ClusterRuns/NovelTables-114607-Constants/.
-cp ~/Documents/DataExploration-Research/MINC/InputOutput/MincConcurrentSessions ~/Documents/DataExploration-Research/MINC/InputOutput/ClusterRuns/NovelTables-114607-Constants/.
+cp ~/data/MINC/InputOutput/MincBitFragment* ClusterRuns/NovelTables-114607-Constants/.
+mv ~/data/MINC/InputOutput/ClusterRuns/NovelTables-114607-Constants/MincBitFragmentIntentSessions{,Singularity}
+mv ~/data/MINC/InputOutput/ClusterRuns/NovelTables-114607-Constants/MincBitFragmentTableIntentSessions{,Singularity}
+cp ~/data/MINC/InputOutput/MincQuerySessions ~/data/MINC/InputOutput/ClusterRuns/NovelTables-114607-Constants/.
+cp ~/data/MINC/InputOutput/MincConcurrentSessions ~/data/MINC/InputOutput/ClusterRuns/NovelTables-114607-Constants/.
 
 # 4) Step 4: Create the K-Fold train and test sets with 80% train and 20% test (Required for Sustenance Experiemnts) 
 python createTrainTestSessions.py -config configDir/MINC_FragmentQueries_Keep_configFile.txt
@@ -88,15 +88,15 @@ python createTrainTestSessions.py -config configDir/MINC_FragmentQueries_Keep_co
 # FV creation phase in the Java code. Now we do not need to prune any recurrent repetition of queries as they no longer exist
 
 # 5) Step 5: Concatenate any single fold of train and test folds created under InputOutput/kFold directory into a single file and copy it to the ClusterRuns/NovelTables-1143# 43-Constants/ 
-cat ~/Documents/DataExploration-Research/MINC/InputOutput/kFold/MincBitFragmentIntentSessions_CONC_TRAIN_FOLD_2 ~/Documents/DataExploration-Research/MINC/InputOutput/kFold/MincBitFragmentIntentSessions_CONC_TEST_FOLD_2 > ~/Documents/DataExploration-Research/MINC/InputOutput/ClusterRuns/NovelTables-114607-Constants/MincBitFragmentIntentSessionsConcTrainTestSustenance_0.8
+cat ~/data/MINC/InputOutput/kFold/MincBitFragmentIntentSessions_CONC_TRAIN_FOLD_2 ~/data/MINC/InputOutput/kFold/MincBitFragmentIntentSessions_CONC_TEST_FOLD_2 > ~/data/MINC/InputOutput/ClusterRuns/NovelTables-114607-Constants/MincBitFragmentIntentSessionsConcTrainTestSustenance_0.8
 # Above chooses FOLD 2 to concatenate train and test sets from.
 
 # 6) Step 6: Above chooses FOLD 2 to concatenate train and test sets from. Now do the following to run either SINGULARITY or SUSTENANCE experiments
 -----------
 SINGULARITY
 ----------- 
-cp ~/Documents/DataExploration-Research/MINC/InputOutput/ClusterRuns/NovelTables-114607-Constants/MincBitFragmentIntentSessionsSingularity ~/Documents/DataExploration-Research/MINC/InputOutput/MincBitFragmentIntentSessions
+cp ~/data/MINC/InputOutput/ClusterRuns/NovelTables-114607-Constants/MincBitFragmentIntentSessionsSingularity ~/data/MINC/InputOutput/MincBitFragmentIntentSessions
 ----------
 SUSTENANCE
 ----------
-cp ~/Documents/DataExploration-Research/MINC/InputOutput/ClusterRuns/NovelTables-114607-Constants/MincBitFragmentIntentSessionsConcTrainTestSustenance_0.8 ~/Documents/DataExploration-Research/MINC/InputOutput/MincBitFragmentIntentSessions
+cp ~/data/MINC/InputOutput/ClusterRuns/NovelTables-114607-Constants/MincBitFragmentIntentSessionsConcTrainTestSustenance_0.8 ~/data/MINC/InputOutput/MincBitFragmentIntentSessions

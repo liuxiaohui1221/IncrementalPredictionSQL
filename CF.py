@@ -11,7 +11,7 @@ def runCosineSimOrMF(configDict):
     elif configDict['CF_COSINESIM_MF']=='MF':
         CFMF.runCF(configDict)
     else:
-        print "CF can either be COSINESIM or MF !!"
+        print ("CF can either be COSINESIM or MF !!")
         sys.exit(0)
     return
 

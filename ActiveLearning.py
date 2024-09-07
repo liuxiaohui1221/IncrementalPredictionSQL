@@ -38,7 +38,7 @@ def exampleSelectionRandom(foldID, activeIter, availTrainDictX, availTrainDictY,
         availTrainDictX = {}
         availTrainDictY = {}
     exampleBatchSize = int(configDict['ACTIVE_BATCH_SIZE'])
-    print "foldID: "+str(foldID)+", activeIter: "+str(activeIter)+", #Hold-out-Pairs: "+str(len(holdOutTrainDictX))
+    print("foldID: "+str(foldID)+", activeIter: "+str(activeIter)+", #Hold-out-Pairs: "+str(len(holdOutTrainDictX)))
     # random selection
     if len(holdOutTrainDictX) < exampleBatchSize:
         exampleBatchSize = len(holdOutTrainDictX)
@@ -48,7 +48,8 @@ def exampleSelectionRandom(foldID, activeIter, availTrainDictX, availTrainDictY,
         availTrainDictY[sessIDQueryID] = holdOutTrainDictY[sessIDQueryID]
         del holdOutTrainDictX[sessIDQueryID]
         del holdOutTrainDictY[sessIDQueryID]
-        print "foldID: " + str(foldID) + ", activeIter: " + str(activeIter) +", Added "+str(len(chosenKeys))+"th example, sessIDQueryID: "+str(sessIDQueryID)+" to the data"
+        print("foldID: " + str(foldID) + ", activeIter: " + str(activeIter) +", Added "+str(len(chosenKeys))+"th "
+                                                                                                             "example, sessIDQueryID: "+str(sessIDQueryID)+" to the data")
     return (availTrainDictX, availTrainDictY, holdOutTrainDictX, holdOutTrainDictY)
 
 def exampleSelectionMinimax(foldID, activeIter, modelRNN, max_lookback, availTrainDictX, availTrainDictY, holdOutTrainDictX, holdOutTrainDictY, trainSessionDict):
@@ -63,7 +64,7 @@ def exampleSelectionMinimax(foldID, activeIter, modelRNN, max_lookback, availTra
     exampleBatchSize = int(configDict['ACTIVE_BATCH_SIZE'])
     minimaxCosineSimDict = {}
     i=0
-    print "foldID: "+str(foldID)+", activeIter: "+str(activeIter)+", #Hold-out-Pairs: "+str(len(holdOutTrainDictX))
+    print("foldID: "+str(foldID)+", activeIter: "+str(activeIter)+", #Hold-out-Pairs: "+str(len(holdOutTrainDictX)))
     for sessIDQueryID in holdOutTrainDictX:
         leftX = np.array(holdOutTrainDictX[sessIDQueryID])
         leftX = leftX.reshape(1, leftX.shape[0], leftX.shape[1])
@@ -78,7 +79,8 @@ def exampleSelectionMinimax(foldID, activeIter, modelRNN, max_lookback, availTra
         maxCosineSim = CFCosineSim.computeListBitCosineSimilarity(predictedY, topKPredictedIntents[0], configDict)
         minimaxCosineSimDict[sessIDQueryID] = maxCosineSim
         if i% 50 ==0:
-            print "foldID: " + str(foldID) + ", activeIter: " + str(activeIter) + ", #Hold-out-Pairs: " + str(len(holdOutTrainDictX))+" #elemSoFar: "+ str(i+1)
+            print("foldID: " + str(foldID) + ", activeIter: " + str(activeIter) + ", #Hold-out-Pairs: " + str(len(
+                holdOutTrainDictX))+" #elemSoFar: "+ str(i+1))
         i+=1
     sorted_minimaxCSD = sorted(minimaxCosineSimDict.items(), key=operator.itemgetter(1)) # we sort in ASC order
     resCount = 0
@@ -91,7 +93,8 @@ def exampleSelectionMinimax(foldID, activeIter, modelRNN, max_lookback, availTra
         resCount+=1
         if resCount >= exampleBatchSize:
             break
-        print "foldID: " + str(foldID) + ", activeIter: " + str(activeIter) +", Added "+str(resCount)+"th example, sessIDQueryID: "+str(sessIDQueryID)+" with cosineSim: "+str(cosSimEntry[1])+" to the data"
+        print("foldID: " + str(foldID) + ", activeIter: " + str(activeIter) +", Added "+str(resCount)+"th example, "
+                                                                                                      "sessIDQueryID: "+str(sessIDQueryID)+" with cosineSim: "+str(cosSimEntry[1])+" to the data")
     return (availTrainDictX, availTrainDictY, holdOutTrainDictX, holdOutTrainDictY)
 
 def createAvailHoldOutDicts(trainX, trainY, trainKeyOrder):
@@ -220,7 +223,8 @@ def runActiveRNNKFoldExp(configDict):
             else:
                 (availTrainDictX, availTrainDictY, holdOutTrainDictX, holdOutTrainDictY) = exampleSelectionRandom(foldID, activeIter, availTrainDictX, availTrainDictY, holdOutTrainDictX, holdOutTrainDictY)
             exSelTime = float(time.time() - startTime)
-            print "FoldID: "+str(foldID)+", activeIter: "+str(activeIter)+", Added " + str(len(availTrainDictX)) + " examples to the training data"
+            print("FoldID: "+str(foldID)+", activeIter: "+str(activeIter)+", Added " + str(len(availTrainDictX)) + " "
+                                                                                                                   "examples to the training data")
             startTime = time.time()
             (avgFMeasure, avgAccuracy, avgPrecision, avgRecall) = testActiveRNN(sessionLengthDict, trainSessionDict, testKeyOrder, testSessionStreamDict, modelRNN, max_lookback)
             testTime = float(time.time() - startTime)
@@ -282,7 +286,7 @@ def computeAvgPerDict(avgDict, expectedIterLength):
         if int(key) > maxValidKey and len(avgDict[key]) < expectedIterLength:
             maxValidKey = key
             if maxValidKey < len(avgDict)-1: # only the last iteration is allowed to have fewer than kfold iteration length - coz remainder occurs only at the end
-                print "Invalid Max Key !!"
+                print("Invalid Max Key !!")
                 sys.exit(0)
     avgOutputDict = {}
     for key in avgDict:
@@ -303,7 +307,7 @@ def computeAvgPerDict(avgDict, expectedIterLength):
         if int(key) > maxValidKey and len(avgDict[key]) < expectedIterLength:
             maxValidKey = key
             if maxValidKey < len(avgDict)-1: # only the last iteration is allowed to have fewer than kfold iteration length - coz remainder occurs only at the end
-                print "Invalid Max Key !!"
+                print("Invalid Max Key !!")
                 sys.exit(0)
     prevLen = 1
     for key in avgDict:

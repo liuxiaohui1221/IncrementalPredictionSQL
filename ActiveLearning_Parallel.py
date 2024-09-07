@@ -43,7 +43,8 @@ def exampleSelectionRandom(foldID, activeIter, availTrainKeyOrder, holdOutTrainK
         del availTrainKeyOrder
         availTrainKeyOrder = []
     exampleBatchSize = int(configDict['ACTIVE_BATCH_SIZE'])
-    print "foldID: " + str(foldID) + ", activeIter: " + str(activeIter) + ", #Hold-out-Pairs: " + str(len(holdOutTrainKeyOrder))
+    print("foldID: " + str(foldID) + ", activeIter: " + str(activeIter) + ", #Hold-out-Pairs: " + str(len(
+        holdOutTrainKeyOrder)))
     # random selection
     if len(holdOutTrainKeyOrder) < exampleBatchSize:
         exampleBatchSize = len(holdOutTrainKeyOrder)
@@ -51,8 +52,8 @@ def exampleSelectionRandom(foldID, activeIter, availTrainKeyOrder, holdOutTrainK
     for sessIDQueryID in chosenKeys:
         availTrainKeyOrder.append(sessIDQueryID)
         holdOutTrainKeyOrder.remove(sessIDQueryID)
-        print "foldID: " + str(foldID) + ", activeIter: " + str(activeIter) + ", Added " + str(
-            len(chosenKeys)) + "th example, sessIDQueryID: " + str(sessIDQueryID) + " to the data"
+        print("foldID: " + str(foldID) + ", activeIter: " + str(activeIter) + ", Added " + str(
+            len(chosenKeys)) + "th example, sessIDQueryID: " + str(sessIDQueryID) + " to the data")
     assert configDict['RNN_PREDICT_NOVEL_QUERIES'] == 'True' or configDict['RNN_PREDICT_NOVEL_QUERIES'] == 'False'
     if configDict['RNN_PREDICT_NOVEL_QUERIES'] == 'False':
         LSTM_RNN_Parallel.updateSampledQueryHistory(configDict, availTrainSampledQueryHistory, availTrainKeyOrder,
@@ -130,7 +131,8 @@ def exampleSelectionMinimax(foldID, activeIter, modelRNN, max_lookback, availTra
     exampleBatchSize = int(configDict['ACTIVE_BATCH_SIZE'])
     minimaxDict = {}
     i = 0
-    print "foldID: " + str(foldID) + ", activeIter: " + str(activeIter) + ", #Avail-Dict-Pairs: " + str(len(availTrainKeyOrder))  + ", #Hold-Out-Dict-Pairs: " + str(len(holdOutTrainKeyOrder))
+    print("foldID: " + str(foldID) + ", activeIter: " + str(activeIter) + ", #Avail-Dict-Pairs: " + str(len(
+        availTrainKeyOrder))  + ", #Hold-Out-Dict-Pairs: " + str(len(holdOutTrainKeyOrder)))
     assert configDict['RNN_PREDICT_NOVEL_QUERIES'] == 'True' or configDict['RNN_PREDICT_NOVEL_QUERIES'] == 'False'
     if configDict['RNN_PREDICT_NOVEL_QUERIES'] == 'False':
         sorted_minimaxDict = createSortedMiniMaxCSD(minimaxDict, modelRNN, max_lookback, holdOutTrainKeyOrder,
@@ -147,9 +149,9 @@ def exampleSelectionMinimax(foldID, activeIter, modelRNN, max_lookback, availTra
         resCount += 1
         if resCount >= exampleBatchSize:
             break
-        print "foldID: " + str(foldID) + ", activeIter: " + str(activeIter) + ", Added " + str(
+        print("foldID: " + str(foldID) + ", activeIter: " + str(activeIter) + ", Added " + str(
             resCount) + "th example, sessIDQueryID: " + str(sessIDQueryID) + " with cosineSim/prob: " + str(
-            minimaxEntry[1]) + " to the data"
+            minimaxEntry[1]) + " to the data")
     if configDict['RNN_PREDICT_NOVEL_QUERIES'] == 'False':
         LSTM_RNN_Parallel.updateSampledQueryHistory(configDict, availTrainSampledQueryHistory, availTrainKeyOrder,
                                                     sessionStreamDict)
@@ -307,7 +309,8 @@ def runActiveRNNKFoldExp(configDict):
             else:
                 (availTrainSampledQueryHistory, availTrainKeyOrder, holdOutTrainKeyOrder, resCount) = exampleSelectionRandom(foldID, activeIter, availTrainKeyOrder, holdOutTrainKeyOrder, availTrainSampledQueryHistory, sessionStreamDict)
             exSelTime = float(time.time() - startTime)
-            print "FoldID: "+str(foldID)+", activeIter: "+str(activeIter)+", Added " + str(resCount) + " examples to the training data, #Hold-Out Key Pairs: "+str(len(holdOutTrainKeyOrder))
+            print("FoldID: "+str(foldID)+", activeIter: "+str(activeIter)+", Added " + str(resCount) + (" examples to "
+                                                                                                        "the training data, #Hold-Out Key Pairs: ")+str(len(holdOutTrainKeyOrder)))
 
             # update quality measures
             assert len(avgTrainTime) == len(avgTestTime) and len(avgExSelTime) == len(avgTrainTime) and len(avgTrainTime) == len(avgKFoldAccuracy) and len(avgTrainTime) == len(avgKFoldFMeasure) and len(avgTrainTime) == len(avgKFoldPrecision) and len(avgTrainTime) == len(avgKFoldRecall)
@@ -385,7 +388,7 @@ def computeAvgPerDict(avgDict, expectedIterLength):
         if int(key) > maxValidKey and len(avgDict[key]) < expectedIterLength:
             maxValidKey = key
             if maxValidKey < len(avgDict)-1: # only the last iteration is allowed to have fewer than kfold iteration length - coz remainder occurs only at the end
-                print "Invalid Max Key !!"
+                print("Invalid Max Key !!")
                 sys.exit(0)
     avgOutputDict = {}
     for key in avgDict:
@@ -427,7 +430,7 @@ def computeAvgPerDict(avgDict, expectedIterLength):
         if int(key) > maxValidKey and len(avgDict[key]) < expectedIterLength:
             maxValidKey = key
             if maxValidKey < len(avgDict)-1: # only the last iteration is allowed to have fewer than kfold iteration length - coz remainder occurs only at the end
-                print "Invalid Max Key !!"
+                print("Invalid Max Key !!")
                 sys.exit(0)
     prevLen = 1
     for key in avgDict:
@@ -496,8 +499,8 @@ def DeprecatedExampleSelectionMinimax(foldID, activeIter, modelRNN, max_lookback
     exampleBatchSize = int(configDict['ACTIVE_BATCH_SIZE'])
     minimaxCosineSimDict = {}
     i = 0
-    print "foldID: " + str(foldID) + ", activeIter: " + str(activeIter) + ", #Avail-Dict-Pairs: " + str(
-        len(availTrainDictX))
+    print("foldID: " + str(foldID) + ", activeIter: " + str(activeIter) + ", #Avail-Dict-Pairs: " + str(
+        len(availTrainDictX)))
     for sessIDQueryID in holdOutTrainDictX:
         leftX = np.array(holdOutTrainDictX[sessIDQueryID])
         leftX = leftX.reshape(1, leftX.shape[0], leftX.shape[1])

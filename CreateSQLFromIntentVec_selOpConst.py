@@ -104,7 +104,7 @@ def initIntentStrObj(schemaDicts, intentVec):
 def assertSize(intentObj):
     # estAllColumnsSize = estGroupByBitMapSize = estOrderByBitMapSize = estProjectionBitMapSize = estHavingBitMapSize =
     # estMinBitMapSize = estMaxBitMapSize = estAvgBitMapSize = estSumBitMapSize = estCountBitMapSize
-    print "estAllOpSize: "+str(intentObj.schemaDicts.allOpSize)+", len(intentVec): "+str(len(intentObj.intentVec))
+    print("estAllOpSize: "+str(intentObj.schemaDicts.allOpSize)+", len(intentVec): "+str(len(intentObj.intentVec)))
     return
 
 def assertIntentOpObjects(intentObj, intentObjDict):
@@ -120,7 +120,7 @@ def assertIntentOpObjects(intentObj, intentObjDict):
        or intentObj.selPredOpBitMap != intentObjDict['selPredOpBitMap']
        or intentObj.selPredColRangeBinBitMap != intentObjDict['selPredColRangeBinBitMap']):
         sameObjs = 0
-    print "Assertion outcome: "+str(sameObjs)
+    print("Assertion outcome: "+str(sameObjs))
     return sameObjs
 
 def populateQueryTypeStr(intentObj):
@@ -268,22 +268,22 @@ def createSQLString(intentObj):
     return actualSQLStr
 
 def printSQLOps(intentObj):
-    print "Query Type: "+str(intentObj.queryType)
-    print "Tables: "+str(intentObj.tables)
-    print "Projected Columns: "+str(intentObj.projCols)
-    print "AVG Columns: "+str(intentObj.avgCols)
-    print "MIN Columns: "+str(intentObj.minCols)
-    print "MAX Columns: " + str(intentObj.maxCols)
-    print "SUM Columns: " + str(intentObj.sumCols)
-    print "COUNT Columns: " + str(intentObj.countCols)
-    print "SEL Columns: " + str(intentObj.selCols)
-    print "GROUP BY Columns: " + str(intentObj.groupByCols)
-    print "ORDER BY Columns: " + str(intentObj.orderByCols)
-    print "HAVING Columns: " + str(intentObj.havingCols)
-    print "Limit: " + str(intentObj.limit)
-    print "JOIN PRED ColPairs: "+ str(intentObj.joinPreds)
-    print "SEL PRED Ops: " + str(intentObj.selPredOps)
-    print "SEL PRED ColRangeBins: " + str(intentObj.selPredColRangeBins)
+    print("Query Type: "+str(intentObj.queryType))
+    print("Tables: "+str(intentObj.tables))
+    print("Projected Columns: "+str(intentObj.projCols))
+    print("AVG Columns: "+str(intentObj.avgCols))
+    print("MIN Columns: "+str(intentObj.minCols))
+    print("MAX Columns: " + str(intentObj.maxCols))
+    print("SUM Columns: " + str(intentObj.sumCols))
+    print("COUNT Columns: " + str(intentObj.countCols))
+    print("SEL Columns: " + str(intentObj.selCols))
+    print("GROUP BY Columns: " + str(intentObj.groupByCols))
+    print("ORDER BY Columns: " + str(intentObj.orderByCols))
+    print("HAVING Columns: " + str(intentObj.havingCols))
+    print("Limit: " + str(intentObj.limit))
+    print("JOIN PRED ColPairs: "+ str(intentObj.joinPreds))
+    print("SEL PRED Ops: " + str(intentObj.selPredOps))
+    print("SEL PRED ColRangeBins: " + str(intentObj.selPredColRangeBins))
 
 def checkBitMapWorking(intentObjDict):
     bitStr = "0100000001110001000"
@@ -291,14 +291,14 @@ def checkBitMapWorking(intentObjDict):
     if(b.size()>len(bitStr)):
         startPos = b.size() % 8
         bitStr = b.tostring()[startPos:b.size()]
-    print bitStr
-    print b.nonzero()
-    print b.test(3)
-    print b.size()
-    print len(bitStr)
-    print "Length of intentObjDict['intentVector']: " + str(len(intentObjDict['intentVector']))
+    print(bitStr)
+    print(b.nonzero())
+    print(b.test(3))
+    print(b.size())
+    print(len(bitStr))
+    print("Length of intentObjDict['intentVector']: " + str(len(intentObjDict['intentVector'])))
     bitmap = BitMap.fromstring(intentObjDict['intentVector'])
-    print "Length of bitmap.tostring(): " + str(len(bitmap.tostring()))
+    print("Length of bitmap.tostring(): " + str(len(bitmap.tostring())))
 
 def createSQLFromIntentStrSanityCheck(schemaDicts, intentObjDict):
     intentObj = initIntentStrObj(schemaDicts, intentObjDict['intentVector'])
@@ -340,7 +340,7 @@ def checkOpToPopulate(newSetBitPos, intentObj):
     elif newSetBitPos >= intentObj.schemaDicts.queryTypeStartBitIndex:
         return "querytype"
     else:
-        print "not possible !!"
+        print("not possible !!")
 
 def populateOps(intentObj, opsToPopulate):
     for opToPopulate in opsToPopulate:
@@ -424,7 +424,7 @@ def populateSQLOpFromType(intentObj, sqlOp, opType):
     elif opType == "selPredColRangeBin":
         intentObj.selPredColRangeBins.append(sqlOp)
     else:
-        print "OpError !!"
+        print("OpError !!")
     return intentObj
 
 def createSQLTableFromIntentBits(intentObj):
@@ -890,9 +890,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     configDict = parseConfig.parseConfigFile(args.config)
     schemaDicts = ReverseEnggQueries_selOpConst.readSchemaDicts(configDict)
-    tempVectorFileName = "/Users/postgres/Documents/DataExploration-Research/MINC/InputOutput/tempVector"
+    tempVectorFileName = "/Users/postgres/data/MINC/InputOutput/tempVector"
     if socket.gethostname() == "en4119510l" or socket.gethostname() == "en4119509l" or socket.gethostname() == "en4119508l" or socket.gethostname() == "en4119507l":
-        tempVectorFileName = "/hdd2/vamsiCodeData/Documents/DataExploration-Research/MINC/InputOutput/tempVector"
+        tempVectorFileName = "/hdd2/vamsiCodeData/data/MINC/InputOutput/tempVector"
     intentObjDict = readIntentObjectsFromFile(tempVectorFileName)
     #intentObjDict = readIntentObjectsFromFile()
     #createSQLFromIntentStrSanityCheck(schemaDicts, intentObjDict)

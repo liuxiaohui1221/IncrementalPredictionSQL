@@ -24,14 +24,14 @@ def fetchIntentFileFromConfigDict(configDict):
     elif configDict['INTENT_REP'] == 'QUERY':
         intentSessionFile = getConfig(configDict['QUERY_INTENT_SESSIONS'])
     else:
-        print "ConfigDict['INTENT_REP'] must either be TUPLE or FRAGMENT or QUERY !!"
+        print("ConfigDict['INTENT_REP'] must either be TUPLE or FRAGMENT or QUERY !!")
         sys.exit(0)
     return intentSessionFile
 
 def updateSessionDict(line, configDict, sessionStreamDict):
     (sessID, queryID, curQueryIntent) = retrieveSessIDQueryIDIntent(line, configDict)
     if str(sessID)+","+str(queryID) in sessionStreamDict:
-        print str(sessID)+","+str(queryID)+ " already exists !!"
+        print(str(sessID)+","+str(queryID)+ " already exists !!")
         sys.exit(0)
     sessionStreamDict[str(sessID)+","+str(queryID)] = curQueryIntent
     return (sessID, queryID, curQueryIntent, sessionStreamDict)
@@ -41,7 +41,7 @@ def updateSessionLineDict(line, configDict, sessionLineDict, newSessionLengthDic
     #if (sessID == 36 or sessID == 30) and queryID > 212:
         #print "hi: in QR"
     if str(sessID)+","+str(queryID) in sessionLineDict:
-        print str(sessID)+","+str(queryID)+ " already exists !!"
+        print(str(sessID)+","+str(queryID)+ " already exists !!")
         sys.exit(0)
     sessionLineDict[str(sessID)+","+str(queryID)] = line.strip()
     if sessID not in newSessionLengthDict:
@@ -57,7 +57,7 @@ def findNextQueryIntent(intentSessionFile, sessID, queryID, configDict, lines):
         if curSessID == sessID and curQueryID == queryID:
             #f.close()
             return curQueryIntent
-    print "Error: Could not find the nextQueryIntent !!"
+    print("Error: Could not find the nextQueryIntent !!")
     sys.exit(0)
 
 def normalizeWeightedVector(curQueryIntent):
@@ -122,7 +122,9 @@ def appendPredictedRNNIntentToFile(sessID, queryID, topKPredictedIntents, actual
     output_str=computePredictedOutputStrRNN(sessID, queryID, topKPredictedIntents, actualQueryIntent, numEpisodes, configDict)
     ti.appendToFile(outputIntentFileName, output_str)
     if configDict['SINGULARITY_OR_KFOLD']=='KFOLD':
-        print "FoldID: "+str(foldID)+", Predicted " + str(len(topKPredictedIntents)) + " query intent vectors for Session " + str(sessID) + ", Query " + str(queryID)
+        print("FoldID: "+str(foldID)+", Predicted " + str(len(topKPredictedIntents)) + " query intent vectors for "
+                                                                                       "Session " + str(sessID) + ", "
+                                                                                                                  "Query " + str(queryID))
     #elif configDict['SINGULARITY_OR_KFOLD']=='SINGULARITY':
         #print "Predicted " + str(len(topKPredictedIntents)) + " query intent vectors for Session " + str(sessID) + ", Query " + str(queryID)
     elapsedAppendTime = float(time.time() - startAppendTime)
@@ -146,8 +148,9 @@ def appendPredictedIntentsToFile(topKSessQueryIndices, topKPredictedIntents, ses
             output_str += topKPredictedIntents[k].replace(";",",")
     ti.appendToFile(outputIntentFileName, output_str)
     if configDict['SINGULARITY_OR_KFOLD'] == 'KFOLD':
-        print "FoldID: "+str(foldID)+" Predicted " + str(len(topKPredictedIntents)) + " query intent vectors for Session " + str(
-            sessID) + ", Query " + str(queryID)
+        print("FoldID: "+str(foldID)+" Predicted " + str(len(topKPredictedIntents)) + " query intent vectors for "
+                                                                                      "Session " + str(
+            sessID) + ", Query " + str(queryID))
     #elif configDict['SINGULARITY_OR_KFOLD'] == 'SINGULARITY':
         #print "Predicted "+str(len(topKPredictedIntents))+" query intent vectors for Session "+str(sessID)+", Query "+str(queryID)
     elapsedAppendTime = float(time.time()-startAppendTime)
@@ -162,7 +165,7 @@ def deleteIfExists(fileName):
 
 def updateResponseTime(episodeResponseTimeDictName, episodeResponseTime, numEpisodes, startEpisode, elapsedAppendTime):
     episodeResponseTime[numEpisodes] = float(time.time()-startEpisode) - elapsedAppendTime # we exclude the time consumed by appending predicted intents to the output intent file
-    print "Episode Response Time: "+str(episodeResponseTime[numEpisodes])
+    print("Episode Response Time: "+str(episodeResponseTime[numEpisodes]))
     elapsedAppendTime = 0.0
     writeToPickleFile(episodeResponseTimeDictName, episodeResponseTime)
     startEpisode = time.time()
@@ -187,7 +190,7 @@ def createQueryExecIntentCreationTimes(configDict):
                                                                                                              queryVocabulary)
             tempExecTimeEpisode += float(queryExecutionTime)
             tempIntentTimeEpisode += float(intentCreationTime)
-            print "Executed and obtained intent for " + sessQueryName
+            print("Executed and obtained intent for " + sessQueryName)
             numQueries += 1
             if numQueries % int(configDict['EPISODE_IN_QUERIES']) == 0:
                 numEpisodes += 1
@@ -492,6 +495,7 @@ def evaluateTimePredictions(episodeResponseTimeDictName, configDict, algoName):
     outputEvalTimeFileName = outputDir + "/OutputEvalTimeShortTermIntent_" + algoName+"_"+\
                              configDict['INTENT_REP'] + "_" + configDict['BIT_OR_WEIGHTED'] + "_TOP_K_" + configDict['TOP_K'] + "_EPISODE_IN_QUERIES_" + \
                              configDict['EPISODE_IN_QUERIES']
+    print("evaluateTimePredictions OutputEvalTimeFileName: " + outputEvalTimeFileName)
     try:
         os.remove(outputEvalTimeFileName)
     except OSError:
@@ -515,9 +519,9 @@ def evaluateTimePredictions(episodeResponseTimeDictName, configDict, algoName):
 
     episodeResponseTime = readFromPickleFile(episodeResponseTimeDictName)
 
-    print "len(episodeQueryExecutionTime) = " + str(
+    print("len(episodeQueryExecutionTime) = " + str(
         len(episodeQueryExecutionTime)) + ", len(episodeIntentCreationTime) = " + str(
-        len(episodeIntentCreationTime)) + ", len(episodeResponseTime) = " + str(len(episodeResponseTime))
+        len(episodeIntentCreationTime)) + ", len(episodeResponseTime) = " + str(len(episodeResponseTime)))
 
   #  assert len(episodeQueryExecutionTime) == len(episodeResponseTime) and len(episodeIntentCreationTime) == len(episodeResponseTime)
     for episodes in episodeResponseTime:
@@ -528,12 +532,13 @@ def evaluateTimePredictions(episodeResponseTimeDictName, configDict, algoName):
             episodeIntentCreationTime[episodes]) + ";IntentPredictionTime(secs):" + str(
             episodeResponseTime[episodes]) + ";TotalResponseTime(secs):" + str(totalResponseTime)
         ti.appendToFile(outputEvalTimeFileName, outputEvalTimeStr)
+    print("appended to file:",outputEvalTimeFileName,outputEvalTimeStr)
     return outputEvalTimeFileName
 
 def evaluatePredictions(outputIntentFileName, episodeResponseTimeDictName, configDict):
     evaluateQualityPredictions(outputIntentFileName, configDict, configDict['ACCURACY_THRESHOLD'], configDict['ALGORITHM'])
     evaluateTimePredictions(episodeResponseTimeDictName, configDict, configDict['ALGORITHM'])
-    print "--Completed Quality and Time Evaluation--"
+    print("--Completed Quality and Time Evaluation--")
     return
 
 if __name__ == "__main__":

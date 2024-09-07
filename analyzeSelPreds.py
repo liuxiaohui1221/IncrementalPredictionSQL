@@ -27,7 +27,7 @@ def writeSetToFile(tabColSet, fn):
             f.write(elem+"\n")
         f.flush()
         f.close()
-    print "Wrote to file " + fn
+    print("Wrote to file " + fn)
 
 def countConstTabPreds(configDict, schemaDicts):
     intentSessionFile = QR.fetchIntentFileFromConfigDict(configDict)
@@ -59,12 +59,12 @@ def countConstTabPreds(configDict, schemaDicts):
                     selTables.add(selTable)
             count+=1
             if count % 1000 == 0:
-                print "len(totalTables): " + str(len(totalTables)) + ", len(selTables): " + str(
+                print("len(totalTables): " + str(len(totalTables)) + ", len(selTables): " + str(
                     len(selTables)) + ", len(selCols): " + str(len(selCols)) + ", len(joinTables): " + str(
-                    len(joinTables)) + ", len(joinCols): " + str(len(joinCols))
-    print "len(totalTables): " + str(len(totalTables)) + ", len(selTables): " + str(
+                    len(joinTables)) + ", len(joinCols): " + str(len(joinCols)))
+    print("len(totalTables): " + str(len(totalTables)) + ", len(selTables): " + str(
         len(selTables)) + ", len(selCols): " + str(len(selCols)) + ", len(joinTables): " + str(
-        len(joinTables)) + ", len(joinCols): " + str(len(joinCols))
+        len(joinTables)) + ", len(joinCols): " + str(len(joinCols)))
     writeSetToFile(totalTables, getConfig(configDict['OUTPUT_DIR'])+"../MincTotalTables")
     writeSetToFile(selTables, getConfig(configDict['OUTPUT_DIR'])+"../MincSelTables")
     writeSetToFile(selCols, getConfig(configDict['OUTPUT_DIR'])+"../MincSelCols")
@@ -88,9 +88,9 @@ def evalSelCols(configDict, schemaDicts):
     #QR.writeToPickleFile(getConfig(configDict['OUTPUT_DIR'])+"../MincSelCols.pickle", selCols)
     joinTables = QR.readFromPickleFile(getConfig(configDict['OUTPUT_DIR'])+"../MincJoinTables.pickle")
     joinCols = QR.readFromPickleFile(getConfig(configDict['OUTPUT_DIR'])+"../MincJoinCols.pickle")
-    print "joinTables - selTables: " + str(joinTables - selTables)
-    print "joinCols - selCols: "+str(joinCols - selCols)
-    print "totalTables - selTables: "+str(totalTables - selTables)
+    print("joinTables - selTables: " + str(joinTables - selTables))
+    print("joinCols - selCols: "+str(joinCols - selCols))
+    print("totalTables - selTables: "+str(totalTables - selTables))
     selJoinCols = selCols.union(joinCols)
     selJoinColTypeDict = {}
     for selJoinCol in selJoinCols:
@@ -99,11 +99,12 @@ def evalSelCols(configDict, schemaDicts):
         offset = schemaDicts.colDict[selJoinTab].index(selJoinColName)
         selJoinColType = colTypeDict[selJoinTab][offset]
         selJoinColTypeDict[selJoinCol] = selJoinColType
-        print selJoinCol + ": "+selJoinColType
-    print set(selJoinColTypeDict.values())
-    print "len(totalTables): " + str(len(totalTables)) + ", len(selTables): " + str(
+        print(selJoinCol + ": "+selJoinColType)
+    print(set(selJoinColTypeDict.values()))
+    print("len(totalTables): " + str(len(totalTables)) + ", len(selTables): " + str(
         len(selTables)) + ", len(selCols): " + str(len(selCols)) + ", len(joinTables): " + str(
-        len(joinTables)) + ", len(joinCols): " + str(len(joinCols)) + ", len(selJoinCols): "+str(len(selJoinColTypeDict))
+        len(joinTables)) + ", len(joinCols): " + str(len(joinCols)) + ", len(selJoinCols): "+str(len(
+        selJoinColTypeDict)))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

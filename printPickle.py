@@ -9,7 +9,7 @@ def computeAvgPerDict(avgDict, expectedIterLength):
         if int(key) > maxValidKey and len(avgDict[key]) < expectedIterLength:
             maxValidKey = key
             if maxValidKey < len(avgDict)-1: # only the last iteration is allowed to have fewer than kfold iteration length - coz remainder occurs only at the end
-                print "Invalid Max Key !!"
+                print("Invalid Max Key !!")
                 sys.exit(0)
     prevLen = 1
     for key in avgDict:
@@ -32,7 +32,7 @@ def computeAvgPerDict(avgDict, expectedIterLength):
         if int(key) > maxValidKey and len(avgDict[key]) < expectedIterLength:
             maxValidKey = key
             if maxValidKey < len(avgDict)-1: # only the last iteration is allowed to have fewer than kfold iteration length - coz remainder occurs only at the end
-                print "Invalid Max Key !!"
+                print("Invalid Max Key !!")
                 sys.exit(0)
     avgOutputDict = {}
     for key in avgDict:
@@ -46,7 +46,7 @@ def computeAvgPerDict(avgDict, expectedIterLength):
 
 if __name__ == "__main__":
     '''
-    readObj = QR.readFromPickleFile('/Users/postgres/Documents/DataExploration-Research/CreditCardDataset/kFold/outputDir/avgKFoldFMeasure.pickle')
+    readObj = QR.readFromPickleFile('/Users/postgres/data/CreditCardDataset/kFold/outputDir/avgKFoldFMeasure.pickle')
     '''
     readObj = {}
     for i in range(5):
@@ -60,8 +60,8 @@ if __name__ == "__main__":
             else:
                 readObj[i][j] = 0.85
     for x in readObj:
-        print 'key=' + str(x) + ', value=' + str(readObj[x])
+        print('key=' + str(x) + ', value=' + str(readObj[x]))
     readObj = computeAvgPerDict(readObj, 10)
     for x in readObj:
-        print 'key=' + str(x) + ', value=' + str(readObj[x])
+        print('key=' + str(x) + ', value=' + str(readObj[x]))
 

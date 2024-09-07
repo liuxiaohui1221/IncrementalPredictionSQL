@@ -120,7 +120,7 @@ def populateColsForOp(opString, schemaDicts):
     elif opString == "having":
         startBitIndex = schemaDicts.havingStartBitIndex
     else:
-        print "ColError !!"
+        print("ColError !!")
     indexToSet = startBitIndex
     for tableIndex in range(len(schemaDicts.tableOrderDict)):
         tableName = schemaDicts.tableOrderDict[tableIndex]
@@ -148,7 +148,7 @@ def populateJoinPreds(schemaDicts):
             joinStrToAppend = tablePairIndex.split(",")[0] + "." + joinColPair.split(",")[0]+ "," + \
                               tablePairIndex.split(",")[1] + "." + joinColPair.split(",")[1]
             if indexToSet in schemaDicts.forwardMapBitsToOps:
-                print "Already exists "+str(indexToSet)+" :"+schemaDicts.forwardMapBitsToOps[indexToSet]
+                print("Already exists "+str(indexToSet)+" :"+schemaDicts.forwardMapBitsToOps[indexToSet])
             schemaDicts.forwardMapBitsToOps[indexToSet] = joinStrToAppend + ";" + opString
             schemaDicts.backwardMapOpsToBits[joinStrToAppend + ";" + opString] = indexToSet
     return schemaDicts
@@ -163,7 +163,7 @@ def populateSelPredColRangeBins(schemaDicts):
             selColRangeBin = schemaDicts.selPredColRangeBins[colName][indexToSet - startBitPos]
             selStrToAppend = colName + "." + selColRangeBin
             if indexToSet in schemaDicts.forwardMapBitsToOps:
-                print "Already exists " + str(indexToSet) + " :" + schemaDicts.forwardMapBitsToOps[indexToSet]
+                print("Already exists " + str(indexToSet) + " :" + schemaDicts.forwardMapBitsToOps[indexToSet])
             schemaDicts.forwardMapBitsToOps[indexToSet] = selStrToAppend + ";" + opString
             schemaDicts.backwardMapOpsToBits[selStrToAppend + ";" + opString] = indexToSet
     return schemaDicts
@@ -179,7 +179,7 @@ def populateSelPredOps(schemaDicts):
             selOp = selOps[indexToSet-startBitPos]
             selStrToAppend = colName + "." + selOp
             if indexToSet in schemaDicts.forwardMapBitsToOps:
-                print "Already exists "+str(indexToSet)+" :"+schemaDicts.forwardMapBitsToOps[indexToSet]
+                print("Already exists "+str(indexToSet)+" :"+schemaDicts.forwardMapBitsToOps[indexToSet])
             schemaDicts.forwardMapBitsToOps[indexToSet] = selStrToAppend + ";" + opString
             schemaDicts.backwardMapOpsToBits[selStrToAppend + ";" + opString] = indexToSet
     return schemaDicts
@@ -417,7 +417,7 @@ def predictTopKNovelIntentsSingleThread(threadID, predictedY, schemaDicts, confi
         topKPredictedIntents.append(topKNovelIntent)
     return topKPredictedIntents
 
-def predictTopKNovelIntentsProcess((threadID, predictedY, schemaDicts, configDict, curIntentBitVec)):
+def predictTopKNovelIntentsProcess(threadID, predictedY, schemaDicts, configDict, curIntentBitVec):
     topKPredictedIntents = predictTopKNovelIntentsSingleThread(threadID, predictedY, schemaDicts, configDict, curIntentBitVec)
     QR.writeToPickleFile(getConfig(configDict['PICKLE_TEMP_OUTPUT_DIR']) + "localTopKDict_" + str(threadID) + ".pickle", topKPredictedIntents)
     return

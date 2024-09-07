@@ -35,7 +35,7 @@ def checkPresenceAndOutput(logFile, sessQueryID):
             if line.startswith("#Episodes") and sessQueryID in line:
                 flag = True
             if flag == True:
-                print line
+                print(line)
     return
 
 def origDemo(configDict, qlLogFile, rnnNovelLogFile, svdLogFile, cfLogFile):
@@ -44,14 +44,14 @@ def origDemo(configDict, qlLogFile, rnnNovelLogFile, svdLogFile, cfLogFile):
     termFlag = input('Enter True to continue and False to terminate: ')
     while (termFlag == True):
         sessQueryID = random.choice(sessQueryIDs)
-        print "Selected " + sessQueryID
-        print "-----------PREDICTION BY Q-LEARNING------------"
+        print("Selected " + sessQueryID)
+        print("-----------PREDICTION BY Q-LEARNING------------")
         checkPresenceAndOutput(qlLogFile, sessQueryID)
-        print "-----------PREDICTION BY RNN(Novel)------------"
+        print("-----------PREDICTION BY RNN(Novel)------------")
         checkPresenceAndOutput(rnnNovelLogFile, sessQueryID)
-        print "-----------PREDICTION BY SVD------------"
+        print("-----------PREDICTION BY SVD------------")
         checkPresenceAndOutput(svdLogFile, sessQueryID)
-        print "-----------PREDICTION BY CFCOSINESIM------------"
+        print("-----------PREDICTION BY CFCOSINESIM------------")
         checkPresenceAndOutput(cfLogFile, sessQueryID)
         termFlag = input('Enter True to continue and False to terminate: ')
     return
@@ -66,20 +66,20 @@ def ourDemo(qlLogFile, rnnNovelLogFile, svdLogFile, cfLogFile):
     while(termFlag == True):
         sessQueryID = random.choice(sessQueryIDs)
         sessQueryIDs.remove(sessQueryID)
-        print "Selected "+sessQueryID
-        print "-----------PREDICTION BY Q-LEARNING------------"
+        print("Selected "+sessQueryID)
+        print("-----------PREDICTION BY Q-LEARNING------------")
         checkPresenceAndOutput(qlLogFile, sessQueryID)
-        print "-----------PREDICTION BY RNN(Novel)------------"
+        print("-----------PREDICTION BY RNN(Novel)------------")
         checkPresenceAndOutput(rnnNovelLogFile, sessQueryID)
-        print "-----------PREDICTION BY SVD------------"
+        print("-----------PREDICTION BY SVD------------")
         checkPresenceAndOutput(svdLogFile, sessQueryID)
-        print "-----------PREDICTION BY CFCOSINESIM------------"
+        print("-----------PREDICTION BY CFCOSINESIM------------")
         checkPresenceAndOutput(cfLogFile, sessQueryID)
         termFlag = input('Enter True to continue and False to terminate: ')
     return
 
 def showDemo(configDict):
-    inputDir = "/Users/postgres/Documents/DataExploration-Research/MINC/InputOutput/ClusterRuns/NovelTables-113K-Pruned/sustenance_0.8"
+    inputDir = "/Users/postgres/data/MINC/InputOutput/ClusterRuns/NovelTables-113K-Pruned/sustenance_0.8"
     qlLogFile = inputDir+"/QL/outputSQL_QL_Log"
     rnnNovelLogFile = inputDir+"/NovelRNN/outputSQL_Novel_RNN_Log"
     svdLogFile = inputDir+"/SVD/outputSQL_SVD_Log"

@@ -46,7 +46,7 @@ def projectDistinctVals(selPredObj, tableName, colName, colType):
             elif 'int' in colType:
                 rowVal = int(row[0])
             else:
-                print 'Unknown datatype !' # datetime stored as string
+                print('Unknown datatype !') # datetime stored as string
                 sys.exit(0)
         except:
             rowVal = unicodedata.normalize('NFKD', row[0]).encode('ascii', 'ignore') # for unicode and non-ascii
@@ -58,7 +58,7 @@ def createSortedRangesPerCol(distinctVals, numBins):
     rangeBinsCol = []
     binSize = 1
     if len(distinctVals) == 0:
-        print "Length 0 !!"
+        print("Length 0 !!")
         return None
     elif len(distinctVals) < numBins:
         binSize = 1
@@ -87,7 +87,7 @@ def createSelPredColRangeBins(selPredObj):
         tableName = selPredCol.split(".")[0]
         colName = selPredCol.split(".")[1]
         colType = findColType(tableName, colName, selPredObj)
-        print "Creating Sorted Range Bins for column "+selPredCol
+        print("Creating Sorted Range Bins for column "+selPredCol)
         distinctVals = projectDistinctVals(selPredObj, tableName, colName, colType)
         rangeBinsCol = createSortedRangesPerCol(distinctVals, numBins)
         if rangeBinsCol is None:
@@ -95,7 +95,7 @@ def createSelPredColRangeBins(selPredObj):
         rangeBinsCol.append('NULL%NULL') # extra bin for comparison with null -- IS (NOT) NULL
         selPredObj.selPredColRangeBinDict[selPredCol] = rangeBinsCol
         if len(rangeBinsCol) > numBins+1:
-            print "numBins > Limit of "+str(numBins+1)
+            print("numBins > Limit of "+str(numBins+1))
     return
 
 def createSelPredOpBitPosDict(selPredObj):
@@ -128,7 +128,7 @@ def writeSelPredColDict(selPredCols, fn):
             selPredColIndex += 1
         f.flush()
         f.close()
-    print "Wrote to file "+fn
+    print("Wrote to file "+fn)
 
 def writeSchemaInfoToFiles(selPredObj):
     writeSelPredColDict(selPredObj.selPredCols, getConfig(selPredObj.configDict['MINC_SEL_PRED_COLS']))
@@ -142,7 +142,7 @@ def buildSelPredDicts(configDict):
     createSelPredOpBitPosDict(selPredObj)
     createSelPredColRangeBins(selPredObj)
     createSelPredColRangeBitPosDict(selPredObj)
-    print "Writing Dictionaries To Files"
+    print("Writing Dictionaries To Files")
     writeSchemaInfoToFiles(selPredObj)
     return
 

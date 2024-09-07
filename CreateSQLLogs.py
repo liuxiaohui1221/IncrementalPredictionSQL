@@ -38,7 +38,7 @@ def readFromConcurrentFile(concSessFile):
                 assert sessQueryID not in curQueryDict
                 curQueryDict[sessQueryID] = curQuery
     except:
-        print "cannot read line !!"
+        print("cannot read line !!")
         sys.exit(0)
     return curQueryDict
 
@@ -134,12 +134,13 @@ def createSQLLogsFromConfigDict(configDict, args):
                                         'BIT_OR_WEIGHTED'] + "_TOP_K_" + configDict['TOP_K'] + "_EPISODE_IN_QUERIES_" + \
                                     configDict['EPISODE_IN_QUERIES'] + "_ACCURACY_THRESHOLD_" + str(accThres)
     elif configDict['ALGORITHM'] == 'QLEARNING':
-        outputEvalQualityFileName = getConfig(configDict['OUTPUT_DIR']) + "/OutputEvalQualityShortTermIntent_" + \
+        outputEvalQualityFileName = os.path.join(getConfig(configDict['OUTPUT_DIR']),
+                                                 "OutputEvalQualityShortTermIntent_",
                                     configDict[
                                         'ALGORITHM'] + "_" + configDict['QL_BOOLEAN_NUMERIC_REWARD'] + "_" + configDict[
                                         'INTENT_REP'] + "_" + configDict[
                                         'BIT_OR_WEIGHTED'] + "_TOP_K_" + configDict['TOP_K'] + "_EPISODE_IN_QUERIES_" + \
-                                    configDict['EPISODE_IN_QUERIES'] + "_ACCURACY_THRESHOLD_" + str(accThres)
+                                    configDict['EPISODE_IN_QUERIES'] + "_ACCURACY_THRESHOLD_" + str(accThres))
     if args.conc is not None:
         concSessFile = args.conc
     else:

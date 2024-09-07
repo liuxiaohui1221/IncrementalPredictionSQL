@@ -308,10 +308,10 @@ def createSQLFragmentDict(intentSessionFile, schemaDicts, configDict):
 def printSQLFragmentDict(SQLFragmentDict):
     count = 0
     for key in SQLFragmentDict.keys():
-        print "<key,value> pair for SQL query #"+str(count)
-        print key
-        print SQLFragmentDict[key]
-        print "================================================"
+        print("<key,value> pair for SQL query #"+str(count))
+        print(key)
+        print(SQLFragmentDict[key])
+        print("================================================")
         count+=1
     return
 
@@ -328,13 +328,13 @@ class evalExec:
         if self.configDict['BORROW_OR_RECONSTRUCT_QUERY'] == "BORROW":
             try:
                 self.SQLFragmentDict = QR.readFromPickleFile(getConfig(self.configDict['PICKLE_TEMP_OUTPUT_DIR'])+"SQLFragmentDict.pickle")
-                print "Read SQLFragmentDict"
+                print("Read SQLFragmentDict")
             except:
-                print "Create SQLFragmentDict"
+                print("Create SQLFragmentDict")
                 self.intentSessionFile = QR.fetchIntentFileFromConfigDict(self.configDict)
                 self.SQLFragmentDict = createSQLFragmentDict(self.intentSessionFile, self.schemaDicts, self.configDict)
                 QR.writeToPickleFile(getConfig(self.configDict['PICKLE_TEMP_OUTPUT_DIR'])+"SQLFragmentDict.pickle", self.SQLFragmentDict)
-                print "len(SQLFragmentDict): " + str(len(self.SQLFragmentDict))
+                print("len(SQLFragmentDict): " + str(len(self.SQLFragmentDict)))
                 printSQLFragmentDict(self.SQLFragmentDict)
 
 
@@ -929,9 +929,11 @@ def computeExecF1(evalExecObj, predOpsObj, nextQuery):
     query_gen_time = float(time.time() - query_gen_time)
     if predictedQuery.lower().strip().startswith("select") and nextQuery.lower().strip().startswith("select"):
         (col_F1, col_prec, col_rec, tup_F1, tup_prec, tup_rec, total_F1, total_prec, total_rec) = execF1(evalExecObj, predOpsObj, predictedQuery, nextQuery)
-        print "NextQuery: " + nextQuery
-        print "PredictedQuery: " + predictedQuery
-        print "col_F1: "+ str(col_F1) + ", col_prec: "+ str(col_prec) + ", col_rec: "+ str(col_rec) + ", tup_F1: "+ str(tup_F1) + ", tup_prec: "+ str(tup_prec) + ", tup_rec: "+ str(tup_rec) + ", total_F1: " + str(total_F1) + ", total_prec: " + str(total_prec) + ", total_rec: " + str(total_rec) + ", query_gen_time: " + str(query_gen_time)
+        print("NextQuery: " + nextQuery)
+        print("PredictedQuery: " + predictedQuery)
+        print("col_F1: "+ str(col_F1) + ", col_prec: "+ str(col_prec) + ", col_rec: "+ str(col_rec) + ", tup_F1: "+
+              str(tup_F1) + ", tup_prec: "+ str(tup_prec) + ", tup_rec: "+ str(tup_rec) + ", total_F1: " + str(
+            total_F1) + ", total_prec: " + str(total_prec) + ", total_rec: " + str(total_rec) + ", query_gen_time: " + str(query_gen_time))
         # print "PredictedSQLFragStr: " + predictedSQLFragStr + "\n"
         #print "BorrowedQuery: " + str(borrowedQuery)
         return (col_F1, col_prec, col_rec, tup_F1, tup_prec, tup_rec, total_F1, total_prec, total_rec, borrowedQuery, query_gen_time)
@@ -986,7 +988,7 @@ def executeExpectedQueries(evalExecObj):
                     records = QExec.executeMINCQuery(nextQuery, evalExecObj.configDict)
                     if records is None:
                         missedNextQueryExec += 1
-                        print "NonExecQuery: "+nextQuery
+                        print("NonExecQuery: "+nextQuery)
                     else:
                         #print "#Records: "+str(len(records))
                         if len(records) == 0:
@@ -997,7 +999,8 @@ def executeExpectedQueries(evalExecObj):
                     #print "Total rows are: " +str(len(records))
                     nextQueryCount+=1
                     if nextQueryCount % 10000 == 0:
-                        print "Total #queries: " + str(nextQueryCount) + ", #misses: " + str(missedNextQueryExec) + ", #zeroRes: " + str(zeroResCount) + ", #nonZeroRes: " + str(nonZeroResCount)
+                        print("Total #queries: " + str(nextQueryCount) + ", #misses: " + str(missedNextQueryExec) +
+                              ", #zeroRes: " + str(zeroResCount) + ", #nonZeroRes: " + str(nonZeroResCount))
                 elif nextQuery.lower().startswith("insert"):
                         insQueryCount += 1
                 elif nextQuery.lower().startswith("update"):
@@ -1051,10 +1054,15 @@ def executeExpectedQueries(evalExecObj):
     avgExecPrec = float(execTotalPrec) / float(execF1Count)
     avgExecRec = float(execTotalRec) / float(execF1Count)
     avg_query_gen_time = float(avg_query_gen_time) / float(borrowedQueryCount)
-    print "avgColF1: "+str(avgColF1)+", avgColPrec: "+str(avgColPrec)+", avgColRec: "+str(avgColRec)+", avgTupF1: "+str(avgTupF1)+", avgTupPrec: "+str(avgTupPrec)+", avgTupRec: "+str(avgTupRec)+", avgExecF1: "+str(avgExecF1)+", avgExecPrec: "+str(avgExecPrec)+", avgExecRec: "+str(avgExecRec)
-    print "Total Test #SELECT queries: " +str(nextQueryCount)+", #misses: "+str(missedNextQueryExec) +", #zeroRes: "+str(zeroResCount)+", #nonZeroRes: "+str(nonZeroResCount) + ", #borrowedQuery: "+str(borrowedQueryCount)
-    print "Total Test #INSERT queries: "+str(insQueryCount)+", #UPDATES: "+str(updQueryCount)+", #DELETES: "+str(delQueryCount)
-    print "Average Query Reconstruction Time: "+str(avg_query_gen_time)
+    print("avgColF1: "+str(avgColF1)+", avgColPrec: "+str(avgColPrec)+", avgColRec: "+str(avgColRec)+", "
+                                                                                                     "avgTupF1: "
+                                                                                                     ""+str(avgTupF1)+", avgTupPrec: "+str(avgTupPrec)+", avgTupRec: "+str(avgTupRec)+", avgExecF1: "+str(avgExecF1)+", avgExecPrec: "+str(avgExecPrec)+", avgExecRec: "+str(avgExecRec))
+    print("Total Test #SELECT queries: " +str(nextQueryCount)+", #misses: "+str(missedNextQueryExec) +", "
+                                                                                                      "#zeroRes: "
+                                                                                                      ""+str(zeroResCount)+", #nonZeroRes: "+str(nonZeroResCount) + ", #borrowedQuery: "+str(borrowedQueryCount))
+    print("Total Test #INSERT queries: "+str(insQueryCount)+", #UPDATES: "+str(updQueryCount)+", #DELETES: "+str(
+        delQueryCount))
+    print("Average Query Reconstruction Time: "+str(avg_query_gen_time))
     return
 '''
     def createEvalMetricsOpWise(evalOpsObj):
@@ -1110,7 +1118,7 @@ def findTableRowStats(evalExecObj):
         query = "SELECT COUNT(*) FROM "+tableName
         countRec = QExec.executeMINCQuery(query, evalExecObj.configDict)
         tableDict[tableName] = int(countRec[0][0])
-        print "tablename: " + str(tableName) + ", count: " + str(tableDict[tableName])
+        print("tablename: " + str(tableName) + ", count: " + str(tableDict[tableName]))
         index += 1
     sorted_x = sorted(tableDict.items(), key=operator.itemgetter(1))
     tableDict = collections.OrderedDict(sorted_x)
