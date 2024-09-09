@@ -21,6 +21,9 @@ def parseConfigFile(fileName):
     configDict = {}
     with open(fileName) as f:
         for line in f:
+            if line.startswith("#"):
+                continue
+            print("Config parameter: "+line.strip())
             (key, val) = line.strip().split("=")
             configDict[key] = val
     return configDict

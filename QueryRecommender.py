@@ -29,6 +29,7 @@ def fetchIntentFileFromConfigDict(configDict):
     return intentSessionFile
 
 def updateSessionDict(line, configDict, sessionStreamDict):
+    # curQueryIntent query的one-hot编码后的bitmap类型
     (sessID, queryID, curQueryIntent) = retrieveSessIDQueryIDIntent(line, configDict)
     if str(sessID)+","+str(queryID) in sessionStreamDict:
         print(str(sessID)+","+str(queryID)+ " already exists !!")
@@ -86,9 +87,11 @@ def retrieveSessIDQueryIDIntent(line, configDict):
     sessQueryName = tokens[0]
     sessID = int(sessQueryName.split(", ")[0].split(" ")[1])
     queryID = int(sessQueryName.split(", ")[1].split(" ")[1]) - 1  # coz queryID starts from 1 instead of 0
-    curQueryIntent = ';'.join(tokens[2:])
+    curQueryIntent = ';'.join(tokens[2:]) # actual query intent
+    # print("before queryintent length:", len(curQueryIntent))
     if ";" not in curQueryIntent and configDict['BIT_OR_WEIGHTED'] == 'BIT':
         curQueryIntent = BitMap.fromstring(curQueryIntent)
+        # print("curqueryintent length: ", curQueryIntent.size())
     else:
         curQueryIntent = normalizeWeightedVector(curQueryIntent)
     return (sessID, queryID, curQueryIntent)

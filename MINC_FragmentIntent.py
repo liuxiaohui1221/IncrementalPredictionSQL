@@ -219,12 +219,15 @@ def createSingularityIntentVectors(sessionQueryDict, configDict):
     queryCount = 0
     queryIndex = 0
     absCount = 0
+    # sessionQueryDict key为sessionid, value为list,
+    # list中每个元素为query line: "Session 1, Query 1;original query;query bit vector"
     numSessions = len(sessionQueryDict)
     while len(sessionQueryDict)!=0:
-        keyList = sessionQueryDict.keys()
+        keyList = list(sessionQueryDict.keys())
         random.shuffle(keyList)
         queryIndex += 1
         for sessIndex in keyList:
+            # print("size:", len(sessionQueryDict[sessIndex]))
             sessQueryIntent = sessionQueryDict[sessIndex][0]
             sessionQueryDict[sessIndex].remove(sessQueryIntent)
             if len(sessionQueryDict[sessIndex]) == 0:
@@ -234,6 +237,7 @@ def createSingularityIntentVectors(sessionQueryDict, configDict):
                 #print "queryIndexRec != queryIndex !!"
             #assert queryIndexRec == str(queryIndex)
             tokens = sessQueryIntent.split(";")
+            print("query intent:",len(tokens[2]))
             assert len(tokens) == 3
             assert queryCount>=0
             if queryCount == 0:

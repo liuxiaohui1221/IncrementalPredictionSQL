@@ -685,9 +685,10 @@ def updateResultsToExcel(configDict, episodeResponseTimeDictName, outputIntentFi
     return
 
 def clear(resultDict):
-    keys = resultDict.keys()
-    for resKey in keys:
-        del resultDict[resKey]
+    # keys = resultDict.keys()
+    # for resKey in keys:
+    #     del resultDict[resKey]
+    resultDict={}
     return resultDict
 
 def compareBitMaps(bitMap1, bitMap2):

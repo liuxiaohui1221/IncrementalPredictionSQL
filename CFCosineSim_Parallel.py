@@ -2,6 +2,8 @@ from __future__ import division
 import sys, operator
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 import QueryRecommender as QR
 from bitmap import BitMap
 import math
@@ -366,9 +368,17 @@ def findTopKSessQueriesSort(threadID, topKSessIndices, sessionSampleDict, sessio
         localSessQuerySimDicts = {}
         for subThreadID in range(numSubThreads):
             argsList.append((threadID, subThreadID, sessQueryPartitions[subThreadID], sessionStreamDict, curSessSummary, configDict))
-        pool.map(computeSessQuerySimilarityMultiThread, argsList)
-        pool.close()
-        pool.join()
+        with ThreadPoolExecutor() as executor:
+            # 提交任务到线程池
+            futures = [executor.submit(computeSessQuerySimilarityMultiThread, threadID, subThreadID, sessQueryPartitions[subThreadID], sessionStreamDict, curSessSummary, configDict)
+                       for threadID, subThreadID, sessQueryPartitions[subThreadID], sessionStreamDict, curSessSummary, configDict in argsList]
+            # 等待所有任务完成并获取结果
+            results = []
+            for future in as_completed(futures):
+                results.append(future.result())
+        # pool.map(computeSessQuerySimilarityMultiThread, argsList)
+        # pool.close()
+        # pool.join()
         for subThreadID in range(numSubThreads):
             localSessQuerySimDicts[subThreadID] = QR.readFromPickleFile(getConfig(configDict['PICKLE_TEMP_OUTPUT_DIR']) + "CFSessQuerySimDict_" + str(threadID) + "_" + str(
             subThreadID) + ".pickle")
@@ -414,9 +424,17 @@ def predictTopKIntents(threadID, curQueryIntent, sessionSummaries, sessionSummar
             argsList.append((threadID, subThreadID, sessPartitions[subThreadID], sharedSessSummaryDict, curSessSummary, configDict))
             # threads[i] = threading.Thread(target=predictTopKIntentsPerThread, args=(i, t_lo, t_hi, keyOrder, resList, sessionDict, sessionSampleDict, sessionStreamDict, sessionLengthDict, configDict))
             # threads[i].start()
-        pool.map(computeSessSimilarityMultiThread, argsList)
-        pool.close()
-        pool.join()
+        with ThreadPoolExecutor() as executor:
+            # 提交任务到线程池
+            futures = [executor.submit(computeSessSimilarityMultiThread, threadID, subThreadID, sessPartitions[subThreadID], sharedSessSummaryDict, curSessSummary, configDict)
+                       for threadID, subThreadID, sessPartitions[subThreadID], sharedSessSummaryDict, curSessSummary, configDict in argsList]
+            # 等待所有任务完成并获取结果
+            results = []
+            for future in as_completed(futures):
+                results.append(future.result())
+        # pool.map(computeSessSimilarityMultiThread, argsList)
+        # pool.close()
+        # pool.join()
         for subThreadID in range(numSubThreads):
             localSessSimDicts[subThreadID] = QR.readFromPickleFile(
                 getConfig(configDict['PICKLE_TEMP_OUTPUT_DIR']) + "CFSessSimDict_" + str(threadID) + "_" + str(
@@ -463,9 +481,17 @@ def predictTopKIntentsOld(threadID, curQueryIntent, sessionSummaries, sessionSam
             argsList.append((threadID, subThreadID, sessPartitions[subThreadID], sharedSessSummaryDict, curSessSummary, configDict))
             # threads[i] = threading.Thread(target=predictTopKIntentsPerThread, args=(i, t_lo, t_hi, keyOrder, resList, sessionDict, sessionSampleDict, sessionStreamDict, sessionLengthDict, configDict))
             # threads[i].start()
-        pool.map(computeSessSimilarityMultiThread, argsList)
-        pool.close()
-        pool.join()
+        with ThreadPoolExecutor() as executor:
+            # 提交任务到线程池
+            futures = [executor.submit(computeSessSimilarityMultiThread, threadID, subThreadID, sessPartitions[subThreadID], sharedSessSummaryDict, curSessSummary, configDict)
+                       for threadID, subThreadID, sessPartitions[subThreadID], sharedSessSummaryDict, curSessSummary, configDict in argsList]
+            # 等待所有任务完成并获取结果
+            results = []
+            for future in as_completed(futures):
+                results.append(future.result())
+        # pool.map(computeSessSimilarityMultiThread, argsList)
+        # pool.close()
+        # pool.join()
         for subThreadID in range(numSubThreads):
             localSessSimDicts[subThreadID] = QR.readFromPickleFile(
                 getConfig(configDict['PICKLE_TEMP_OUTPUT_DIR']) + "CFSessSimDict_" + str(threadID) + "_" + str(
@@ -686,8 +712,9 @@ def computeSample(sampleList, totalList, sampleSize):
         batchSize = 1
     curIndex = 0
     covered = 0
-    while covered < sampleSize and curIndex < len(totalList):
-        sampleList.append(totalList[curIndex])
+    temptotalList=list(totalList)
+    while covered < sampleSize and curIndex < len(temptotalList):
+        sampleList.append(temptotalList[curIndex])
         curIndex += batchSize
         covered += 1
     return sampleList
@@ -786,7 +813,6 @@ def createSharedPoolDict(manager, srcDict):
     for key in srcDict:
         sharedDict[key] = srcDict[key]
     return sharedDict
-
 def predictIntentsWithoutCurrentBatch(lo, hi, keyOrder, resultDict, sessionSummaries, sessionSummarySample, sessionSampleDict, sessionStreamDict, configDict):
     numThreads = min(int(configDict['CF_THREADS']), hi-lo+1)
     numKeysPerThread = int(float(hi - lo + 1) / float(numThreads))
@@ -820,12 +846,26 @@ def predictIntentsWithoutCurrentBatch(lo, hi, keyOrder, resultDict, sessionSumma
         argsList = []
         for threadID in range(numThreads):
             (t_lo, t_hi) = t_loHiDict[threadID]
-            argsList.append((threadID, t_lo, t_hi, keyOrder, resultDict[threadID], sharedSessSummaryDict, sharedSessSummarySampleList, sharedSessSampleDict, sessionStreamDict, configDict))
+            argsList.append((threadID, t_lo, t_hi, keyOrder, resultDict[threadID], sharedSessSummaryDict,
+                             sharedSessSummarySampleList, sharedSessSampleDict, sessionStreamDict, configDict))
             #threads[i] = threading.Thread(target=predictTopKIntentsPerThread, args=(i, t_lo, t_hi, keyOrder, resList, sessionDict, sessionSampleDict, sessionStreamDict, sessionLengthDict, configDict))
             #threads[i].start()
-        pool.map(predictTopKIntentsPerThread, argsList)
-        pool.close()
-        pool.join()
+        # argsList = [(t_id, t_lo, t_hi, keyOrder, resList, sessionSummaries, sessionSummarySample, sessionSampleDict,
+        #              sessionStreamDict, configDict) for
+        #             t_id, t_lo, t_hi, keyOrder, resList, sessionSummaries, sessionSummarySample, sessionSampleDict, sessionStreamDict, configDict
+        #             in argsList]
+        with ThreadPoolExecutor() as executor:
+            # 提交任务到线程池
+            futures = [executor.submit(predictTopKIntentsPerThread, threadID, t_lo, t_hi, keyOrder, resultDict[threadID], sharedSessSummaryDict,
+                             sharedSessSummarySampleList, sharedSessSampleDict, sessionStreamDict, configDict) for threadID, t_lo, t_hi, keyOrder, resultDict[threadID], sharedSessSummaryDict,
+                             sharedSessSummarySampleList, sharedSessSampleDict, sessionStreamDict, configDict in argsList]
+            # 等待所有任务完成并获取结果
+            results = []
+            for future in as_completed(futures):
+                results.append(future.result())
+        # pool.map(predictTopKIntentsPerThread, argsList)
+        # pool.close()
+        # pool.join()
         for threadID in range(numThreads):
             resultDict[threadID] = QR.readFromPickleFile(
                 getConfig(configDict['PICKLE_TEMP_OUTPUT_DIR']) + "CFCosineSimResList_" + str(threadID) + ".pickle")

@@ -2,6 +2,8 @@ from __future__ import division
 import sys, operator
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 import QueryRecommender as QR
 from bitmap import BitMap
 import math
@@ -195,7 +197,7 @@ def predictTopKIntents(threadID, qTable, queryVocabValOrder, sessQueryID, sessio
     (maxCosineSim, maxSimSessQueryID) = findMostSimilarQuery(sessQueryID, queryVocabValOrder, sessionStreamDict)
     qValues = qTable[maxSimSessQueryID]
     topK = int(configDict['TOP_K'])
-    topKIndices = zip(*heapq.nlargest(topK, enumerate(qValues), key=operator.itemgetter(1)))[0]
+    topKIndices = [x[0] for x in heapq.nlargest(topK, enumerate(qValues), key=operator.itemgetter(1))]
     topKSessQueryIndices = []
     for topKIndex in topKIndices:
         topKSessQueryIndices.append(queryVocabValOrder[topKIndex])
@@ -259,9 +261,19 @@ def predictIntentsWithoutCurrentBatch(lo, hi, qObj, keyOrder):
                              qObj.queryVocabValOrder, qObj.sessionStreamDict, qObj.configDict))
             # threads[i] = threading.Thread(target=predictTopKIntentsPerThread, args=(i, t_lo, t_hi, keyOrder, resList, sessionDict, sessionSampleDict, sessionStreamDict, sessionLengthDict, configDict))
             # threads[i].start()
-        pool.map(predictTopKIntentsPerThread, argsList)
-        pool.close()
-        pool.join()
+        with ThreadPoolExecutor() as executor:
+            # 提交任务到线程池
+            futures = [executor.submit(predictTopKIntentsPerThread, threadID, t_lo, t_hi, keyOrder, sharedTable, qObj.resultDict[threadID],
+                             qObj.queryVocabValOrder, qObj.sessionStreamDict, qObj.configDict)
+                       for threadID, t_lo, t_hi, keyOrder, sharedTable, qObj.resultDict[threadID],
+                             qObj.queryVocabValOrder, qObj.sessionStreamDict, qObj.configDict in argsList]
+            # 等待所有任务完成并获取结果
+            results = []
+            for future in as_completed(futures):
+                results.append(future.result())
+        # pool.map(predictTopKIntentsPerThread, argsList)
+        # pool.close()
+        # pool.join()
         for threadID in range(numThreads):
             qObj.resultDict[threadID] = QR.readFromPickleFile(
                 getConfig(configDict['PICKLE_TEMP_OUTPUT_DIR']) + "QLResList_" + str(threadID) + ".pickle")

@@ -86,7 +86,7 @@ def computeHexDigest(curBitMap):
     # hexDigest = hashlib.sha512(curBitMap.tostring()).hexdigest()
     arr = curBitMap.nonzero()
     arrStr = ','.join([str(pos) for pos in arr])
-    hexDigest = hashlib.sha256(arrStr).hexdigest()
+    hexDigest = hashlib.sha256(arrStr.encode()).hexdigest()
     return hexDigest
 
 def findIfQueryInside(sessQueryID, distinctQueries, svdObj):

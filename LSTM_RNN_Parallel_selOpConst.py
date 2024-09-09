@@ -139,10 +139,12 @@ def initializeRNN(n_features, n_memUnits, configDict):
     return modelRNN
 
 def appendTrainingXY(sessionStreamDict, sessID, queryID, configDict, dataX, dataY):
+    # query bitmap，按queryId的顺序添加到list中。
     sessIntentList = []
     for qid in range(queryID+1):
         sessIntentList.append(sessionStreamDict[str(sessID)+","+str(qid)])
     numQueries = len(sessIntentList)
+    # xList中的每行quey表示：将query one-hot bitmap转为字符列表；依次添加到dataX中
     xList = []
 
     sessionMaxLastK = int(configDict['RNN_SESS_VEC_MAX_LAST_K'])
@@ -159,7 +161,7 @@ def appendTrainingXY(sessionStreamDict, sessID, queryID, configDict, dataX, data
     yList = createCharListFromIntent(sessIntentList[numQueries-1], configDict)
     dataX.append(np.array(xList))
     dataY.append(np.array([yList]))
-    # print("dataX,dataY shape", np.array(dataX).shape, np.array(dataY).shape)
+    print("dataX,dataY shape", len(xList), np.array(dataY).shape)
     return (dataX, dataY)
 
 
@@ -848,43 +850,43 @@ def trainModelSustenance(episodic, trainKeyOrder, sampledQueryHistory, queryKeys
     return (modelRNN, sessionDictGlobal, sampledQueryHistory, max_lookback)
 
 
-def testModelSustenance(testKeyOrder, schemaDicts, sampledQueryHistory, startEpisode, numEpisodes, episodeResponseTimeDictName, episodeResponseTime, outputIntentFileName, resultDict, sessionDictGlobal, sessionDictsThreads, sessionStreamDict, sessionLengthDict, modelRNN, max_lookback, configDict):
-    batchSize = int(configDict['EPISODE_IN_QUERIES'])
-    lo = 0
-    hi = -1
-    while hi < len(testKeyOrder) - 1:
-        lo = hi + 1
-        if len(testKeyOrder) - lo < batchSize:
-            batchSize = len(testKeyOrder) - lo
-        hi = lo + batchSize - 1
-        elapsedAppendTime = 0.0
-
-        # test first for each query in the batch if the classifier is not None
-        print("Starting prediction in Episode " + str(numEpisodes) + ", lo: " + str(lo) + ", hi: " + str(
-            hi) + ", len(keyOrder): " + str(len(testKeyOrder)))
-        if modelRNN is not None:
-            assert configDict['INCLUDE_CUR_SESS'] == 'True' or configDict['INCLUDE_CUR_SESS'] == 'False'
-            if configDict['INCLUDE_CUR_SESS'] == 'True':
-                resultDict = predictIntentsIncludeCurrentBatch(lo, hi, testKeyOrder, schemaDicts, resultDict,
-                                                               sessionDictGlobal, sessionDictsThreads,
-                                                               sampledQueryHistory, sessionStreamDict,
-                                                               sessionLengthDict, modelRNN, max_lookback, configDict)
-            else:
-                resultDict = predictIntentsWithoutCurrentBatch(lo, hi, testKeyOrder, schemaDicts, resultDict,
-                                                               sessionDictGlobal, sampledQueryHistory,
-                                                               sessionStreamDict, sessionLengthDict, modelRNN,
-                                                               max_lookback, configDict)
-        # we record the test times
-        numEpisodes += 1
-        if len(resultDict) > 0:
-            elapsedAppendTime = appendResultsToFile(resultDict, elapsedAppendTime, numEpisodes, outputIntentFileName,
-                                                    configDict, -1)
-            (episodeResponseTimeDictName, episodeResponseTime, startEpisode, elapsedAppendTime) = QR.updateResponseTime(
-                episodeResponseTimeDictName, episodeResponseTime, numEpisodes, startEpisode, elapsedAppendTime)
-            resultDict = clear(resultDict)
-    if modelRNN is not None:
-        updateResultsToExcel(configDict, episodeResponseTimeDictName, outputIntentFileName)
-    return
+# def testModelSustenance(testKeyOrder, schemaDicts, sampledQueryHistory, startEpisode, numEpisodes, episodeResponseTimeDictName, episodeResponseTime, outputIntentFileName, resultDict, sessionDictGlobal, sessionDictsThreads, sessionStreamDict, sessionLengthDict, modelRNN, max_lookback, configDict):
+#     batchSize = int(configDict['EPISODE_IN_QUERIES'])
+#     lo = 0
+#     hi = -1
+#     while hi < len(testKeyOrder) - 1:
+#         lo = hi + 1
+#         if len(testKeyOrder) - lo < batchSize:
+#             batchSize = len(testKeyOrder) - lo
+#         hi = lo + batchSize - 1
+#         elapsedAppendTime = 0.0
+#
+#         # test first for each query in the batch if the classifier is not None
+#         print("Starting prediction in Episode " + str(numEpisodes) + ", lo: " + str(lo) + ", hi: " + str(
+#             hi) + ", len(keyOrder): " + str(len(testKeyOrder)))
+#         if modelRNN is not None:
+#             assert configDict['INCLUDE_CUR_SESS'] == 'True' or configDict['INCLUDE_CUR_SESS'] == 'False'
+#             if configDict['INCLUDE_CUR_SESS'] == 'True':
+#                 resultDict = predictIntentsIncludeCurrentBatch(lo, hi, testKeyOrder, schemaDicts, resultDict,
+#                                                                sessionDictGlobal, sessionDictsThreads,
+#                                                                sampledQueryHistory, sessionStreamDict,
+#                                                                sessionLengthDict, modelRNN, max_lookback, configDict)
+#             else:
+#                 resultDict = predictIntentsWithoutCurrentBatch(lo, hi, testKeyOrder, schemaDicts, resultDict,
+#                                                                sessionDictGlobal, sampledQueryHistory,
+#                                                                sessionStreamDict, sessionLengthDict, modelRNN,
+#                                                                max_lookback, configDict)
+#         # we record the test times
+#         numEpisodes += 1
+#         if len(resultDict) > 0:
+#             elapsedAppendTime = appendResultsToFile(resultDict, elapsedAppendTime, numEpisodes, outputIntentFileName,
+#                                                     configDict, -1)
+#             (episodeResponseTimeDictName, episodeResponseTime, startEpisode, elapsedAppendTime) = QR.updateResponseTime(
+#                 episodeResponseTimeDictName, episodeResponseTime, numEpisodes, startEpisode, elapsedAppendTime)
+#             resultDict = clear(resultDict)
+#     if modelRNN is not None:
+#         updateResultsToExcel(configDict, episodeResponseTimeDictName, outputIntentFileName)
+#     return
 
 
 def evalSustenance(keyOrder, schemaDicts, sampledQueryHistory, queryKeysSetAside, startEpisode, numEpisodes, episodeResponseTimeDictName, episodeResponseTime, outputIntentFileName, resultDict, sessionDictGlobal, sessionDictsThreads, sessionStreamDict, sessionLengthDict, modelRNN, max_lookback, configDict):
@@ -954,44 +956,44 @@ def checkResultDictNotEmpty(resultDict):
             return 'False'
     return 'True'
 
-def testOneFold(schemaDicts, foldID, keyOrder, sampledQueryHistory, sessionStreamDict, sessionLengthDict, modelRNN, max_lookback, sessionDictGlobal, resultDict, episodeResponseTime, outputIntentFileName, episodeResponseTimeDictName, configDict):
-    try:
-        os.remove(outputIntentFileName)
-    except OSError:
-        pass
-    numEpisodes = 1 # starts from Episode 1
-    startEpisode = time.time()
-    prevSessID = -1
-    elapsedAppendTime = 0.0
-
-    episodeWiseKeys = []
-
-    for key in keyOrder:
-        sessID = int(key.split(",")[0])
-        if prevSessID != sessID:
-            assert prevSessID not in sessionDictGlobal # because we never add any batch of test queries to the sessionDictGlobal in the kFold Experiments
-            if len(episodeWiseKeys) > 0:
-                lo = 0
-                hi = len(episodeWiseKeys) -1
-                resultDict = predictIntentsWithoutCurrentBatch(lo, hi, episodeWiseKeys, schemaDicts, resultDict, sessionDictGlobal,
-                                                               sampledQueryHistory, sessionStreamDict,
-                                                               sessionLengthDict,
-                                                               modelRNN, max_lookback, configDict)
-            episodeWiseKeys = []
-            prevSessID = sessID
-            isEmpty = checkResultDictNotEmpty(resultDict)
-            assert isEmpty == 'True' or isEmpty == 'False'
-            if isEmpty == 'False':
-                elapsedAppendTime = appendResultsToFile(resultDict, elapsedAppendTime, numEpisodes,
-                                                        outputIntentFileName, configDict, foldID)
-                (episodeResponseTimeDictName, episodeResponseTime, startEpisode,
-                 elapsedAppendTime) = QR.updateResponseTime(episodeResponseTimeDictName, episodeResponseTime,
-                                                            numEpisodes, startEpisode, elapsedAppendTime)
-                #print episodeResponseTime.keys()
-                resultDict = clear(resultDict)
-                numEpisodes += 1  # episodes start from 1, numEpisodes = numTestSessions
-        episodeWiseKeys.append(key)
-    return (outputIntentFileName, episodeResponseTimeDictName)
+# def testOneFold(schemaDicts, foldID, keyOrder, sampledQueryHistory, sessionStreamDict, sessionLengthDict, modelRNN, max_lookback, sessionDictGlobal, resultDict, episodeResponseTime, outputIntentFileName, episodeResponseTimeDictName, configDict):
+#     try:
+#         os.remove(outputIntentFileName)
+#     except OSError:
+#         pass
+#     numEpisodes = 1 # starts from Episode 1
+#     startEpisode = time.time()
+#     prevSessID = -1
+#     elapsedAppendTime = 0.0
+#
+#     episodeWiseKeys = []
+#
+#     for key in keyOrder:
+#         sessID = int(key.split(",")[0])
+#         if prevSessID != sessID:
+#             assert prevSessID not in sessionDictGlobal # because we never add any batch of test queries to the sessionDictGlobal in the kFold Experiments
+#             if len(episodeWiseKeys) > 0:
+#                 lo = 0
+#                 hi = len(episodeWiseKeys) -1
+#                 resultDict = predictIntentsWithoutCurrentBatch(lo, hi, episodeWiseKeys, schemaDicts, resultDict, sessionDictGlobal,
+#                                                                sampledQueryHistory, sessionStreamDict,
+#                                                                sessionLengthDict,
+#                                                                modelRNN, max_lookback, configDict)
+#             episodeWiseKeys = []
+#             prevSessID = sessID
+#             isEmpty = checkResultDictNotEmpty(resultDict)
+#             assert isEmpty == 'True' or isEmpty == 'False'
+#             if isEmpty == 'False':
+#                 elapsedAppendTime = appendResultsToFile(resultDict, elapsedAppendTime, numEpisodes,
+#                                                         outputIntentFileName, configDict, foldID)
+#                 (episodeResponseTimeDictName, episodeResponseTime, startEpisode,
+#                  elapsedAppendTime) = QR.updateResponseTime(episodeResponseTimeDictName, episodeResponseTime,
+#                                                             numEpisodes, startEpisode, elapsedAppendTime)
+#                 #print episodeResponseTime.keys()
+#                 resultDict = clear(resultDict)
+#                 numEpisodes += 1  # episodes start from 1, numEpisodes = numTestSessions
+#         episodeWiseKeys.append(key)
+#     return (outputIntentFileName, episodeResponseTimeDictName)
 
 
 
@@ -1027,6 +1029,7 @@ def initRNNSingularity(configDict):
         pass
     numQueries = 0
     manager = multiprocessing.Manager()
+    # key:sessID, queryID value: curQueryIntent bitmap类型
     sessionStreamDict = manager.dict()
     keyOrder = []
     with open(intentSessionFile) as f:
@@ -1163,11 +1166,12 @@ def runFromExistingOutputInBetween(configDict):
 
 
 if __name__ == "__main__":
-    #configDict = parseConfig.parseConfigFile("configFile.txt")
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-config", help="Config parameters file", type=str, required=True)
-    args = parser.parse_args()
-    configDict = parseConfig.parseConfigFile(args.config)
+    # -config configDir/BusTracker_Novel_RNN_singularity_configFile.txt
+    configDict = parseConfig.parseConfigFile("configDir/BusTracker_Novel_RNN_singularity_configFile.txt")
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument("-config", help="Config parameters file", type=str, required=True)
+    # args = parser.parse_args()
+    # configDict = parseConfig.parseConfigFile(args.config)
     #loadModelSustenance(configDict)
     assert configDict['RUN_FROM_EXISTING_OUTPUT'] == 'True' or configDict['RUN_FROM_EXISTING_OUTPUT'] =='False'
     if configDict['RUN_FROM_EXISTING_OUTPUT'] == 'False':
