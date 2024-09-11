@@ -267,11 +267,11 @@ def createSingularityIntentVectors(sessionQueryDict, configDict):
 
 
 if __name__ == "__main__":
-    #configDict = parseConfig.parseConfigFile("MINC_configFile.txt")
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-config", help="Config parameters file", type=str, required=True)
-    args = parser.parse_args()
-    configDict = parseConfig.parseConfigFile(args.config)
+    configDict = parseConfig.parseConfigFile("configDir/BusTracker_FragmentQueries_Keep_configFile.txt")
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument("-config", help="Config parameters file", type=str, required=True)
+    # args = parser.parse_args()
+    # configDict = parseConfig.parseConfigFile(args.config)
     assert configDict["BIT_OR_WEIGHTED"] == "BIT"
     fragmentIntentSessionsFile = getConfig(configDict['BIT_FRAGMENT_INTENT_SESSIONS'])
     try:

@@ -135,8 +135,7 @@ def createSQLLogsFromConfigDict(configDict, args):
                                     configDict['EPISODE_IN_QUERIES'] + "_ACCURACY_THRESHOLD_" + str(accThres)
     elif configDict['ALGORITHM'] == 'QLEARNING':
         outputEvalQualityFileName = os.path.join(getConfig(configDict['OUTPUT_DIR']),
-                                                 "OutputEvalQualityShortTermIntent_",
-                                    configDict[
+                                                 "OutputEvalQualityShortTermIntent_" + configDict[
                                         'ALGORITHM'] + "_" + configDict['QL_BOOLEAN_NUMERIC_REWARD'] + "_" + configDict[
                                         'INTENT_REP'] + "_" + configDict[
                                         'BIT_OR_WEIGHTED'] + "_TOP_K_" + configDict['TOP_K'] + "_EPISODE_IN_QUERIES_" + \

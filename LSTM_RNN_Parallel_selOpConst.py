@@ -903,7 +903,11 @@ def evalSustenance(keyOrder, schemaDicts, sampledQueryHistory, queryKeysSetAside
     testModelSustenance(testKeyOrder, schemaDicts, sampledQueryHistory, startEpisode, numEpisodes, episodeResponseTimeDictName, episodeResponseTime, outputIntentFileName, resultDict, sessionDictGlobal, sessionDictsThreads, sessionStreamDict, sessionLengthDict, modelRNN, max_lookback, configDict)
     return
 
-def trainTestBatchWise(keyOrder, schemaDicts, sampledQueryHistory, queryKeysSetAside, startEpisode, numEpisodes, episodeResponseTimeDictName, episodeResponseTime, outputIntentFileName, resultDict, sessionDictGlobal, sessionDictsThreads, sessionStreamDict, sessionLengthDict, modelRNN, max_lookback, configDict):
+
+def trainTestBatchWise(keyOrder, schemaDicts, sampledQueryHistory, queryKeysSetAside, startEpisode, numEpisodes,
+                       episodeResponseTimeDictName, episodeResponseTime, outputIntentFileName, resultDict,
+                       sessionDictGlobal,
+                       sessionDictsThreads, sessionStreamDict, sessionLengthDict, modelRNN, max_lookback, configDict):
     batchSize = int(configDict['EPISODE_IN_QUERIES'])
     lo = 0
     hi = -1
@@ -921,9 +925,15 @@ def trainTestBatchWise(keyOrder, schemaDicts, sampledQueryHistory, queryKeysSetA
         if modelRNN is not None:
             assert configDict['INCLUDE_CUR_SESS'] == 'True' or configDict['INCLUDE_CUR_SESS'] == 'False'
             if configDict['INCLUDE_CUR_SESS'] == 'True':
-                resultDict = predictIntentsIncludeCurrentBatch(lo, hi, keyOrder, schemaDicts, resultDict, sessionDictGlobal, sessionDictsThreads, sampledQueryHistory, sessionStreamDict, sessionLengthDict, modelRNN, max_lookback, configDict)
+                resultDict = predictIntentsIncludeCurrentBatch(lo, hi, keyOrder, schemaDicts, resultDict,
+                                                               sessionDictGlobal, sessionDictsThreads,
+                                                               sampledQueryHistory, sessionStreamDict,
+                                                               sessionLengthDict, modelRNN, max_lookback, configDict)
             else:
-                resultDict = predictIntentsWithoutCurrentBatch(lo, hi, keyOrder, schemaDicts, resultDict, sessionDictGlobal, sampledQueryHistory, sessionStreamDict, sessionLengthDict, modelRNN, max_lookback, configDict)
+                resultDict = predictIntentsWithoutCurrentBatch(lo, hi, keyOrder, schemaDicts, resultDict,
+                                                               sessionDictGlobal,
+                                                               sampledQueryHistory, sessionStreamDict,
+                                                               sessionLengthDict, modelRNN, max_lookback, configDict)
 
         print("Starting training in Episode " + str(numEpisodes))
         # update SessionDictGlobal and train with the new batch
@@ -1041,7 +1051,10 @@ def initRNNSingularity(configDict):
     startEpisode = time.time()
     predictedY = None
     modelRNN = None
-    return (schemaDicts, sampledQueryHistory, queryKeysSetAside, numEpisodes, episodeResponseTimeDictName, episodeResponseTime, numQueries, resultDict, sessionDictGlobal, sessionDictsThreads, sessionLengthDict, sessionStreamDict, keyOrder, startEpisode, outputIntentFileName, modelRNN, max_lookback, predictedY)
+    return (
+    schemaDicts, sampledQueryHistory, queryKeysSetAside, numEpisodes, episodeResponseTimeDictName, episodeResponseTime,
+    numQueries, resultDict, sessionDictGlobal, sessionDictsThreads, sessionLengthDict, sessionStreamDict, keyOrder,
+    startEpisode, outputIntentFileName, modelRNN, max_lookback, predictedY)
 
 
 def runRNNSingularityExp(configDict):
