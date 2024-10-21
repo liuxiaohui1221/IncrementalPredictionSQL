@@ -1,11 +1,10 @@
 bitmap==0.0.7
-scikit-learn==1.2.2
+scikit-learn==1.5.2
 pandas==2.0.3
 openpyxl==3.0.10
 numpy==1.23.5
 matplotlib==3.7.2
 keras==2.12.0
 psycopg2-binary==2.9.9
-mysql==5.7.20
 mysql-connector-python==9.0.0
-tensorflow==2.12.1
+tensorflow==2.17.0
