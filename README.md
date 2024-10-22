@@ -20,9 +20,13 @@ Pre-created SQL fragment vectors for the BusTracker dataset are available at Bus
 1.执行流程：
    - 首先，通过[MINC_FragmentIntent.py](MINC_FragmentIntent.py)脚本将MINC或BusTracker数据集转换为SQL片段向量。
     输入：[BusTracker_FragmentQueries_Keep_configFile.txt](configDir%2FBusTracker_FragmentQueries_Keep_configFile.txt)
+     输入的数据：data/BusTracker/InputOutput/BakOutput/BusTrackerQueryLog_SPLIT_OUT_xxx
      python MINC_FragmentIntent.py -config configDir/BusTracker_FragmentQueries_Keep_configFile.txt
      输出：输出的SQL片段向量存储在配置文件参数
-   - BIT_FRAGMENT_INTENT_SESSIONS、CONCURRENT_QUERY_SESSIONS、 BIT_FRAGMENT_TABLE_INTENT_SESSIONS
+   - BIT_FRAGMENT_INTENT_SESSIONS(data/BusTracker/InputOutput/MincBitFragmentIntentSessions)、
+   - QUERYSESSIONS(data/BusTracker/InputOutput/MincQuerySessions)
+   - CONCURRENT_QUERY_SESSIONS(data/BusTracker/InputOutput/MincConcurrentSessions)、
+   - BIT_FRAGMENT_TABLE_INTENT_SESSIONS(data/BusTracker/InputOutput/MincBitFragmentTableIntentSessions)
      指定的文件中。
    - 其次，将上面的输出文件作为输入，sh scripts/runBusTrackerNovelRNNSingularity.sh执行 LSTM_RNN_Parallel_selOpConst.py
 # Running the code:

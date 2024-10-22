@@ -39,6 +39,7 @@ import ReverseEnggQueries
 import ReverseEnggQueries_selOpConst
 from keras.models import load_model
 import CF_SVD_selOpConst
+from RNNDemo import trainMyRNN
 
 
 class ThreadSafeDict(dict) :
@@ -94,6 +95,7 @@ def updateRNNIncrementalTrain(modelRNN, max_lookback, x_train, y_train, configDi
     batchSize = min(len(x_train), int(configDict['RNN_BATCH_SIZE']))
     print("shape of x_train,y_train is ", x_train.shape,y_train.shape)
     modelRNN.fit(x_train, y_train, epochs=int(configDict['RNN_FULL_TRAIN_EPOCHS']), batch_size=batchSize)
+    # trainMyRNN(x_train, y_train, epochs=int(configDict['RNN_FULL_TRAIN_EPOCHS']))
     if max_lookback_this > max_lookback:
         max_lookback = max_lookback_this
     return (modelRNN, max_lookback)
@@ -151,6 +153,7 @@ def appendTrainingXY(sessionStreamDict, sessID, queryID, configDict, dataX, data
     assert sessionMaxLastK > 0
     if numQueries < sessionMaxLastK:
         sessionMaxLastK = numQueries
+    print("sessionMaxLastK", sessionMaxLastK)
     queryStartIndex = numQueries - 1 - sessionMaxLastK
     for i in range(queryStartIndex, numQueries-1):
         prevIntent = sessIntentList[i]
@@ -161,7 +164,7 @@ def appendTrainingXY(sessionStreamDict, sessID, queryID, configDict, dataX, data
     yList = createCharListFromIntent(sessIntentList[numQueries-1], configDict)
     dataX.append(np.array(xList))
     dataY.append(np.array([yList]))
-    print("dataX,dataY shape", len(xList), np.array(dataY).shape)
+
     return (dataX, dataY)
 
 
@@ -199,6 +202,7 @@ def createTemporalPairs(queryKeysSetAside, configDict, sessionDictGlobal, sessio
             updateSessionDictWithCurrentIntent(sessionDictGlobal, sessID, queryID)
         if int(queryID) > 0:
             (dataX, dataY) = appendTrainingXY(sessionStreamDict, sessID, queryID, configDict, dataX, dataY)
+    print("dataX,dataY shape", np.array(dataX).shape, np.array(dataY).shape)
     return (dataX, dataY)
 
 

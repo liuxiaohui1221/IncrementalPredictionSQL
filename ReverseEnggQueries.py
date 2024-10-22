@@ -274,8 +274,8 @@ def readJoinColDicts(joinPredFile, joinPredBitPosFile):
 def readSchemaDicts(configDict):
     (tableDict, tableOrderDict) = readTableDict(getConfig(configDict['MINC_TABLES']))
     colDict = readColDict(getConfig(configDict['MINC_COLS']))
-    (joinPredDict, joinPredBitPosDict) = readJoinColDicts(getConfig(configDict['MINC_JOIN_PREDS']), getConfig(configDict['MINC_JOIN_PRED_BIT_POS']))
-    schemaDicts = SchemaDicts(tableDict, tableOrderDict, colDict, joinPredDict, joinPredBitPosDict)
+    # (joinPredDict, joinPredBitPosDict) = readJoinColDicts(getConfig(configDict['MINC_JOIN_PREDS']), getConfig(configDict['MINC_JOIN_PRED_BIT_POS']))
+    schemaDicts = SchemaDicts(tableDict, tableOrderDict, colDict, {}, {})
     return schemaDicts
 
 def topKThres(configDict):

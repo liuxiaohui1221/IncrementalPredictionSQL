@@ -1,3 +1,4 @@
+import os
 from os.path import expanduser
 import socket
 def parseSchema(schemaFileName):
@@ -14,7 +15,8 @@ def getConfig(relativePath):
     homeDir = expanduser("~")
     if socket.gethostname() == "en4119510l" or socket.gethostname() == "en4119509l" or socket.gethostname() == "en4119508l" or socket.gethostname() == "en4119507l":
         homeDir = "/hdd2/vamsiCodeData"
-    absPath = homeDir+"/"+relativePath
+    # absPath = homeDir+"/"+relativePath
+    absPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), relativePath)
     return absPath
 
 def parseConfigFile(fileName):
