@@ -153,7 +153,6 @@ def appendTrainingXY(sessionStreamDict, sessID, queryID, configDict, dataX, data
     assert sessionMaxLastK > 0
     if numQueries < sessionMaxLastK:
         sessionMaxLastK = numQueries
-    print("sessionMaxLastK", sessionMaxLastK)
     queryStartIndex = numQueries - 1 - sessionMaxLastK
     for i in range(queryStartIndex, numQueries-1):
         prevIntent = sessIntentList[i]

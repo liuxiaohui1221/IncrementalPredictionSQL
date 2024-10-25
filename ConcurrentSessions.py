@@ -9,7 +9,7 @@ import TupleIntent as ti
 
 def countQueries(inputFile):
     sessionQueryCountDict = {}
-    with open(inputFile) as f:
+    with open(inputFile,encoding='utf-8') as f:
         for line in f:
             sessTokens = line.strip().split(";")
             # sessionIndices need to be noted that they are neither sequential nor complete. For instance session 15 or 16 does not exist.

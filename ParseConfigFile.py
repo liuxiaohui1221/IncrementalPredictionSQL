@@ -27,5 +27,5 @@ def parseConfigFile(fileName):
                 continue
             print("Config parameter: "+line.strip())
             (key, val) = line.strip().split("=")
-            configDict[key] = val
+            configDict[key] = val.strip()
     return configDict

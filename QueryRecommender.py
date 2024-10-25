@@ -230,6 +230,7 @@ def writeToPickleFile(fileName, writeObj):
         pickle.dump(writeObj, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 def computeBitFMeasure(actualQueryIntent, topKQueryIntent):
+    print("actualQueryIntent.size(),topKQueryIntent.size():",actualQueryIntent.size(), topKQueryIntent.size())
     assert actualQueryIntent.size() == topKQueryIntent.size()
     TP=0
     FP=0

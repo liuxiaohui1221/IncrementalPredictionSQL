@@ -262,7 +262,7 @@ def createSQLFromIntentStrSanityCheck(schemaDicts, intentObjDict):
     intentObj = initIntentStrObj(schemaDicts, intentObjDict['intentVector'])
     assertIntentOpObjects(intentObj, intentObjDict)
     createSQLFromIntentString(intentObj)
-    #printSQLOps(intentObj)
+    # printSQLOps(intentObj)
 
 def checkOpToPopulate(newSetBitPos, intentObj):
     if newSetBitPos >= intentObj.schemaDicts.joinPredicatesStartBitIndex:
@@ -393,7 +393,7 @@ def createSQLFromIntentBits(intentObj):
             sqlOp = opTokens[0]
             opType = opTokens[1]
             intentObj = populateSQLOpFromType(intentObj, sqlOp, opType)
-    #printSQLOps(intentObj)
+    # printSQLOps(intentObj)
     return intentObj
 
 def setBit(opDimBit, intentObj):
@@ -542,7 +542,8 @@ def fixHavingViolations(intentObj, precOrRecallFavor):
 def fixNullQueryTypeWithPrevEffect(intentObj, curIntentObj):
     if intentObj.queryType is None:
         if curIntentObj is not None:
-            intentObj.queryType = copy.copy(curIntentObj.queryType) # borrow the querytype of the current query
+            # fixNullQueryTypeDefaultOtherQuery(intentObj)
+            intentObj.queryType = "select" # borrow the querytype of the current query
             opDimBit = intentObj.schemaDicts.backwardMapOpsToBits[intentObj.queryType+";querytype"]
         else:
             #select by default
@@ -587,7 +588,7 @@ def fixNullProjColViolationsWithPrevEffect(intentObj, curIntentObj):
                 intentObj = setBit(opDimBit, intentObj)
     return intentObj
 
-def fixNullQueryTypeDefaultOtherQuery(intentObj, curIntentObj):
+def fixNullQueryTypeDefaultOtherQuery(intentObj):
     if intentObj.queryType is None:
         #select by default
         intentObj.queryType = "select"
@@ -709,5 +710,5 @@ if __name__ == "__main__":
     #intentObjDict = readIntentObjectsFromFile()
     #createSQLFromIntentStrSanityCheck(schemaDicts, intentObjDict)
     intentObj = createSQLFromIntentBitMapSanityCheck(schemaDicts, intentObjDict)
-    printSQLOps(intentObj)
+    # printSQLOps(intentObj)
     #createSQLFromIntent(schemaDicts, intentObjDict['intentVector'])

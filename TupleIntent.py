@@ -24,7 +24,7 @@ def createTupleIntentRep(rowIDs, sessQuery, configDict):
     return (newQuery,resObj)
 
 def appendToFile(outputFile, outputLine):
-    with open(outputFile, 'a') as outFile:
+    with open(outputFile, 'a', encoding='utf-8') as outFile:
         outFile.write(outputLine+"\n")
 
 if __name__ == "__main__":

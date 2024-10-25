@@ -47,14 +47,15 @@ class SchemaDicts:
         self.minStartBitIndex = self.avgStartBitIndex + self.allColumnsSize
         self.maxStartBitIndex = self.minStartBitIndex + self.allColumnsSize
         self.sumStartBitIndex = self.maxStartBitIndex + self.allColumnsSize
-        self.countStartBitIndex = self.sumStartBitIndex + self.allColumnsSize
-        self.selectionStartBitIndex = self.countStartBitIndex + self.allColumnsSize
-        self.groupByStartBitIndex = self.selectionStartBitIndex + self.allColumnsSize
-        self.orderByStartBitIndex = self.groupByStartBitIndex + self.allColumnsSize
-        self.havingStartBitIndex = self.orderByStartBitIndex + self.allColumnsSize
-        self.limitStartBitIndex = self.havingStartBitIndex + self.allColumnsSize
-        self.joinPredicatesStartBitIndex = self.limitStartBitIndex + self.limitBitMapSize
-        self.allOpSize = self.queryTypeBitMapSize + self.tableBitMapSize + self.allColumnsSize * 10 + self.limitBitMapSize + self.joinPredicatesBitMapSize
+        # self.countStartBitIndex = self.sumStartBitIndex + self.allColumnsSize
+        self.selectionStartBitIndex = self.sumStartBitIndex + self.allColumnsSize
+        self.groupByStartBitIndex = self.selectionStartBitIndex + self.allColumnsSize  #where clause
+        # self.orderByStartBitIndex = self.groupByStartBitIndex + self.allColumnsSize
+        self.havingStartBitIndex = self.groupByStartBitIndex + self.allColumnsSize
+        # self.limitStartBitIndex = self.havingStartBitIndex + self.allColumnsSize
+        # self.joinPredicatesStartBitIndex = self.limitStartBitIndex + self.limitBitMapSize
+        self.allOpSize = self.queryTypeBitMapSize + self.tableBitMapSize + self.allColumnsSize * 8
+        #  + self.limitBitMapSize + self.joinPredicatesBitMapSize
         # the following populates the map which can look up from bits to maps and from maps to bits
         self.forwardMapBitsToOps = {}
         self.backwardMapOpsToBits = {}
@@ -145,13 +146,13 @@ def populateBiDirectionalLookupMap(schemaDicts):
     schemaDicts = populateColsForOp("min", schemaDicts)
     schemaDicts = populateColsForOp("max", schemaDicts)
     schemaDicts = populateColsForOp("sum", schemaDicts)
-    schemaDicts = populateColsForOp("count", schemaDicts)
+    # schemaDicts = populateColsForOp("count", schemaDicts)
     schemaDicts = populateColsForOp("select", schemaDicts)
     schemaDicts = populateColsForOp("groupby", schemaDicts)
-    schemaDicts = populateColsForOp("orderby", schemaDicts)
+    # schemaDicts = populateColsForOp("orderby", schemaDicts)
     schemaDicts = populateColsForOp("having", schemaDicts)
-    schemaDicts = populateLimit(schemaDicts)
-    schemaDicts = populateJoinPreds(schemaDicts)
+    # schemaDicts = populateLimit(schemaDicts)
+    # schemaDicts = populateJoinPreds(schemaDicts)
     #print len(schemaDicts.forwardMapBitsToOps)
     #print len(schemaDicts.backwardMapOpsToBits)
     #print schemaDicts.allOpSize
