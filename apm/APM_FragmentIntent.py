@@ -121,28 +121,28 @@ def seqIntentVectorFilesKeepCrawler(configDict):
     sessID = -1
     relSessID = -1
     queryLimit = int(configDict['QUERY_LIMIT'])
-    for i in range(numFiles):
-        fileNamePerThread = os.path.join(current_dir,"../"+splitFileName)
-        with open(fileNamePerThread) as f:
-            for line in f:
-                line = line.strip()
-                if len(line.split(";")) > 3:
-                    line = removeExcessDelimiters(line)
-                assert len(line.split(";")) == 3
-                tokens = line.split(";")
-                sessName = tokens[0].split(", ")[0].split(" ")[1]
-                if sessName != prevSessName:
-                    sessID+=1
-                    prevSessName = sessName
-                if sessID >= int(configDict['BIT_FRAGMENT_START_SESS_INDEX']):
-                    if sessID not in sessionQueryDict:
-                        sessionQueryDict[sessID] = []
-                    sessionQueryDict[sessID].append(line)
-                    queryCount +=1
-                    if queryLimit != 0 and queryCount > queryLimit: # 0 indicates no limit
-                        break
-                    if queryCount % 10000 == 0:
-                        print("Query count so far: "+str(queryCount)+", len(sessionQueryDict): "+str(len(sessionQueryDict)))
+    fileNamePerThread = os.path.join(current_dir,"../"+splitFileName)
+    print(fileNamePerThread)
+    with open(fileNamePerThread, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if len(line.split(";")) > 3:
+                line = removeExcessDelimiters(line)
+            assert len(line.split(";")) == 3
+            tokens = line.split(";")
+            sessName = tokens[0].split(", ")[0].split(" ")[1]
+            if sessName != prevSessName:
+                sessID+=1
+                prevSessName = sessName
+            if sessID >= int(configDict['BIT_FRAGMENT_START_SESS_INDEX']):
+                if sessID not in sessionQueryDict:
+                    sessionQueryDict[sessID] = []
+                sessionQueryDict[sessID].append(line)
+                queryCount +=1
+                if queryLimit != 0 and queryCount > queryLimit: # 0 indicates no limit
+                    break
+                if queryCount % 10000 == 0:
+                    print("Query count so far: "+str(queryCount)+", len(sessionQueryDict): "+str(len(sessionQueryDict)))
     return sessionQueryDict
 
 def concatenateSeqIntentVectorFiles(configDict):
