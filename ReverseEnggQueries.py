@@ -33,6 +33,7 @@ class SchemaDicts:
         self.joinPredDict = joinPredDict
         self.joinPredBitPosDict = joinPredBitPosDict
 
+        # type4,table11,projection346,AVG346,MIN346,MAX346,SUM346,where346,groupBy346,orderBy346,having346,limit1
         self.queryTypeBitMapSize = 4  # select, insert, update, delete
         self.limitBitMapSize = 1
         self.tableBitMapSize = estimateTableBitMapSize(self)
@@ -50,12 +51,17 @@ class SchemaDicts:
         # self.countStartBitIndex = self.sumStartBitIndex + self.allColumnsSize
         self.selectionStartBitIndex = self.sumStartBitIndex + self.allColumnsSize
         self.groupByStartBitIndex = self.selectionStartBitIndex + self.allColumnsSize  #where clause
-        # self.orderByStartBitIndex = self.groupByStartBitIndex + self.allColumnsSize
-        self.havingStartBitIndex = self.groupByStartBitIndex + self.allColumnsSize
-        # self.limitStartBitIndex = self.havingStartBitIndex + self.allColumnsSize
-        # self.joinPredicatesStartBitIndex = self.limitStartBitIndex + self.limitBitMapSize
-        self.allOpSize = self.queryTypeBitMapSize + self.tableBitMapSize + self.allColumnsSize * 8
-        #  + self.limitBitMapSize + self.joinPredicatesBitMapSize
+        self.orderByStartBitIndex = self.groupByStartBitIndex + self.allColumnsSize
+        self.havingStartBitIndex = self.orderByStartBitIndex + self.allColumnsSize
+        self.limitStartBitIndex = self.havingStartBitIndex + self.allColumnsSize
+        self.joinPredicatesStartBitIndex = self.limitStartBitIndex + self.limitBitMapSize
+        self.allOpSize = (self.queryTypeBitMapSize + self.tableBitMapSize + self.allColumnsSize * 9 +
+                          self.limitBitMapSize)
+        print("allOpSize: ", self.allOpSize)
+        print("tableBitMapSize: ", self.tableBitMapSize)
+        print("allColumnsSize: ", self.allColumnsSize)
+        print("limitBitMapSize: ", self.limitBitMapSize)
+        # + self.joinPredicatesBitMapSize)
         # the following populates the map which can look up from bits to maps and from maps to bits
         self.forwardMapBitsToOps = {}
         self.backwardMapOpsToBits = {}
@@ -149,9 +155,9 @@ def populateBiDirectionalLookupMap(schemaDicts):
     # schemaDicts = populateColsForOp("count", schemaDicts)
     schemaDicts = populateColsForOp("select", schemaDicts)
     schemaDicts = populateColsForOp("groupby", schemaDicts)
-    # schemaDicts = populateColsForOp("orderby", schemaDicts)
+    schemaDicts = populateColsForOp("orderby", schemaDicts)
     schemaDicts = populateColsForOp("having", schemaDicts)
-    # schemaDicts = populateLimit(schemaDicts)
+    schemaDicts = populateLimit(schemaDicts)
     # schemaDicts = populateJoinPreds(schemaDicts)
     #print len(schemaDicts.forwardMapBitsToOps)
     #print len(schemaDicts.backwardMapOpsToBits)
