@@ -87,11 +87,13 @@ def retrieveSessIDQueryIDIntent(line, configDict):
     sessQueryName = tokens[0]
     sessID = int(sessQueryName.split(", ")[0].split(" ")[1])
     queryID = int(sessQueryName.split(", ")[1].split(" ")[1]) - 1  # coz queryID starts from 1 instead of 0
-    curQueryIntent = ';'.join(tokens[2:]) # actual query intent
-    # print("before queryintent length:", len(curQueryIntent))
+    strQueryIntent=tokens[2:]
+    print("before queryintent list length:", len(strQueryIntent[0]))
+    curQueryIntent = ';'.join(strQueryIntent) # actual query intent
+    print("before queryintent length:", len(curQueryIntent))
     if ";" not in curQueryIntent and configDict['BIT_OR_WEIGHTED'] == 'BIT':
-        curQueryIntent = BitMap.fromstring(curQueryIntent)
-        # print("curqueryintent length: ", curQueryIntent.size())
+        curQueryIntent = BitMap.fromstring(curQueryIntent.strip())
+        print("curqueryintent length: ", curQueryIntent.size())
     else:
         curQueryIntent = normalizeWeightedVector(curQueryIntent)
     return (sessID, queryID, curQueryIntent)
@@ -230,7 +232,6 @@ def writeToPickleFile(fileName, writeObj):
         pickle.dump(writeObj, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 def computeBitFMeasure(actualQueryIntent, topKQueryIntent):
-    print("actualQueryIntent.size(),topKQueryIntent.size():",actualQueryIntent.size(), topKQueryIntent.size())
     assert actualQueryIntent.size() == topKQueryIntent.size()
     TP=0
     FP=0

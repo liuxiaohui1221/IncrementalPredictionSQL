@@ -664,7 +664,7 @@ def updateQualityResultsToExcel(configDict, episodeResponseTimeDictName, outputI
 def updateResultsToExcel(configDict, episodeResponseTimeDictName, outputIntentFileName):
     accThres = float(configDict['ACCURACY_THRESHOLD'])
 
-
+    print("output intent filename:",outputIntentFileName)
     QR.evaluateQualityPredictions(outputIntentFileName, configDict, accThres,
                                   configDict['ALGORITHM'] + "_" + configDict['RNN_BACKPROP_LSTM_GRU'])
     outputEvalQualityFileName = getConfig(configDict['OUTPUT_DIR']) + "/OutputEvalQualityShortTermIntent_" + configDict[
@@ -852,7 +852,8 @@ def trainModelSustenance(episodic, trainKeyOrder, sampledQueryHistory, queryKeys
     return (modelRNN, sessionDictGlobal, sampledQueryHistory, max_lookback)
 
 
-def testModelSustenance(testKeyOrder, schemaDicts, sampledQueryHistory, startEpisode, numEpisodes, episodeResponseTimeDictName, episodeResponseTime, outputIntentFileName, resultDict, sessionDictGlobal, sessionDictsThreads, sessionStreamDict, sessionLengthDict, modelRNN, max_lookback, configDict):
+def runModelSustenance(testKeyOrder, schemaDicts, sampledQueryHistory, startEpisode, numEpisodes,
+                     episodeResponseTimeDictName, episodeResponseTime, outputIntentFileName, resultDict, sessionDictGlobal, sessionDictsThreads, sessionStreamDict, sessionLengthDict, modelRNN, max_lookback, configDict):
     batchSize = int(configDict['EPISODE_IN_QUERIES'])
     lo = 0
     hi = -1
@@ -902,7 +903,7 @@ def evalSustenance(keyOrder, schemaDicts, sampledQueryHistory, queryKeysSetAside
         (modelRNN, sessionDictGlobal, sampledQueryHistory, max_lookback) = loadModelSustenance(configDict)
     sustTotalTrainTime = float(time.time() - sustStartTrainTime)
     print("Sustenace Train Time: " + str(sustTotalTrainTime))
-    testModelSustenance(testKeyOrder, schemaDicts, sampledQueryHistory, startEpisode, numEpisodes, episodeResponseTimeDictName, episodeResponseTime, outputIntentFileName, resultDict, sessionDictGlobal, sessionDictsThreads, sessionStreamDict, sessionLengthDict, modelRNN, max_lookback, configDict)
+    runModelSustenance(testKeyOrder, schemaDicts, sampledQueryHistory, startEpisode, numEpisodes, episodeResponseTimeDictName, episodeResponseTime, outputIntentFileName, resultDict, sessionDictGlobal, sessionDictsThreads, sessionStreamDict, sessionLengthDict, modelRNN, max_lookback, configDict)
     return
 
 
@@ -968,7 +969,8 @@ def checkResultDictNotEmpty(resultDict):
             return 'False'
     return 'True'
 
-def testOneFold(schemaDicts, foldID, keyOrder, sampledQueryHistory, sessionStreamDict, sessionLengthDict, modelRNN, max_lookback, sessionDictGlobal, resultDict, episodeResponseTime, outputIntentFileName, episodeResponseTimeDictName, configDict):
+def runOneFold(schemaDicts, foldID, keyOrder, sampledQueryHistory, sessionStreamDict, sessionLengthDict, modelRNN,
+             max_lookback, sessionDictGlobal, resultDict, episodeResponseTime, outputIntentFileName, episodeResponseTimeDictName, configDict):
     try:
         os.remove(outputIntentFileName)
     except OSError:
@@ -1130,7 +1132,7 @@ def runRNNKFoldExp(configDict):
         (testSessionStreamDict, testKeyOrder, resultDict, testEpisodeResponseTime) = initRNNOneFoldTest(sessionStreamDict, testIntentSessionFile, configDict)
         if modelRNN is not None:
             startTest = time.time()
-            (outputIntentFileName, episodeResponseTimeDictName) = testOneFold(schemaDicts, foldID, testKeyOrder, sampledQueryHistory, testSessionStreamDict, sessionLengthDict, modelRNN, max_lookback, sessionDictGlobal, resultDict, testEpisodeResponseTime, outputIntentFileName, episodeResponseTimeDictName, configDict)
+            (outputIntentFileName, episodeResponseTimeDictName) = runOneFold(schemaDicts, foldID, testKeyOrder, sampledQueryHistory, testSessionStreamDict, sessionLengthDict, modelRNN, max_lookback, sessionDictGlobal, resultDict, testEpisodeResponseTime, outputIntentFileName, episodeResponseTimeDictName, configDict)
             testTime = float(time.time() - startTest)
             avgTestTime.append(testTime)
             kFoldOutputIntentFiles.append(outputIntentFileName)
