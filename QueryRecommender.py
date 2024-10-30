@@ -88,12 +88,12 @@ def retrieveSessIDQueryIDIntent(line, configDict):
     sessID = int(sessQueryName.split(", ")[0].split(" ")[1])
     queryID = int(sessQueryName.split(", ")[1].split(" ")[1]) - 1  # coz queryID starts from 1 instead of 0
     strQueryIntent=tokens[2:]
-    print("before queryintent list length:", len(strQueryIntent[0]))
+    # print("before queryintent list length:", len(strQueryIntent[0]))
     curQueryIntent = ';'.join(strQueryIntent) # actual query intent
-    print("before queryintent length:", len(curQueryIntent))
+    # print("before queryintent length:", len(curQueryIntent))
     if ";" not in curQueryIntent and configDict['BIT_OR_WEIGHTED'] == 'BIT':
         curQueryIntent = BitMap.fromstring(curQueryIntent.strip())
-        print("curqueryintent length: ", curQueryIntent.size())
+        # print("curqueryintent length: ", curQueryIntent.size())
     else:
         curQueryIntent = normalizeWeightedVector(curQueryIntent)
     return (sessID, queryID, curQueryIntent)
@@ -184,7 +184,7 @@ def createQueryExecIntentCreationTimes(configDict):
     numEpisodes = 0
     tempExecTimeEpisode = 0.0
     tempIntentTimeEpisode = 0.0
-    with open(getConfig(configDict['CONCURRENT_QUERY_SESSIONS'])) as f:
+    with open(getConfig(configDict['CONCURRENT_QUERY_SESSIONS']),encoding='utf-8') as f:
         for line in f:
             sessQueries = line.split(";")
             sessQueryName = sessQueries[0]
@@ -388,7 +388,7 @@ def computeAvgFoldAccuracy(kFoldOutputIntentFiles, configDict):
     avgFMeasure = {}
     accThres = configDict['ACCURACY_THRESHOLD']
     for foldOutputIntentFile in kFoldOutputIntentFiles:
-        with open(foldOutputIntentFile) as f:
+        with open(foldOutputIntentFile,encoding='utf-8') as f:
             for line in f:
                 (sessID, queryID, numEpisodes, accuracy, precision, recall, FMeasure, maxFIndex) = computeAccuracyForEachEpisode(line, configDict)
                 avgMaxAccuracy = appendToDict(avgMaxAccuracy, numEpisodes, accuracy)
@@ -428,7 +428,7 @@ def evaluateQualityPredictions(outputIntentFileName, configDict, accThres, algoN
         os.remove(outputEvalQualityFileName)
     except OSError:
         pass
-    with open(outputIntentFileName) as f:
+    with open(outputIntentFileName,encoding='utf-8') as f:
         for line in f:
             (sessID, queryID, numEpisodes, accuracy, precision, recall, FMeasure, maxFIndex) = computeAccuracyForEachEpisode(line,
                                                                                                         configDict)

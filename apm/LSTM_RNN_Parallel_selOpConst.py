@@ -497,7 +497,7 @@ def predictIntentsWithoutCurrentBatch(lo, hi, keyOrder, schemaDicts, resultDict,
             (t_lo, t_hi) = t_loHiDict[i]
             resList = resultDict[i]
             #argsList.append((t_lo, t_hi, keyOrder, modelRNN, resList, sessionDictCurThread, sessionStreamDict, sessionLengthDict, max_lookback, configDict))
-            modelRNN._make_predict_function()
+            modelRNN.make_predict_function()
             threads[i] = threading.Thread(target=predictTopKIntentsPerThread, args=(i, t_lo, t_hi, keyOrder, schemaDicts, modelRNN, resList, sessionDictGlobal, sampledQueryHistory, sessionStreamDict, sessionLengthDict, max_lookback, configDict))
             threads[i].start()
         for i in range(numThreads):
@@ -749,8 +749,8 @@ def updateSampledQueryHistory(configDict, sampledQueryHistory, queryKeysSetAside
                 sampledQueryHistory[hexDigestKey] = sessQueryID
                 curIndex += batchSize
                 covered += 1
-    print("len(distinctQueries): "+str(len(distinctQueries))+", len(sampledQueryHistory): "+str(len(
-        sampledQueryHistory)))
+    # print("len(distinctQueries): "+str(len(distinctQueries))+", len(sampledQueryHistory): "+str(len(
+    #     sampledQueryHistory)))
     return sampledQueryHistory
 
 def saveModel(modelRNN, sessionDictGlobal, sampledQueryHistory, max_lookback, configDict):
