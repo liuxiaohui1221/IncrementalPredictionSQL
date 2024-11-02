@@ -88,12 +88,12 @@ def retrieveSessIDQueryIDIntent(line, configDict):
     sessID = int(sessQueryName.split(", ")[0].split(" ")[1])
     queryID = int(sessQueryName.split(", ")[1].split(" ")[1]) - 1  # coz queryID starts from 1 instead of 0
     strQueryIntent=tokens[2:]
-    print("before queryintent list length:", len(strQueryIntent[0]))
+    # print("before queryintent list length:", len(strQueryIntent[0]))
     curQueryIntent = ';'.join(strQueryIntent) # actual query intent
-    print("before queryintent length:", len(curQueryIntent))
+    # print("before queryintent length:", len(curQueryIntent))
     if ";" not in curQueryIntent and configDict['BIT_OR_WEIGHTED'] == 'BIT':
         curQueryIntent = BitMap.fromstring(curQueryIntent.strip())
-        print("curqueryintent length: ", curQueryIntent.size())
+        # print("curqueryintent length: ", curQueryIntent.size())
     else:
         curQueryIntent = normalizeWeightedVector(curQueryIntent)
     return (sessID, queryID, curQueryIntent)

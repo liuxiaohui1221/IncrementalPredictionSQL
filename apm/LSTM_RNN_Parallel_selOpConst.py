@@ -497,7 +497,7 @@ def predictIntentsWithoutCurrentBatch(lo, hi, keyOrder, schemaDicts, resultDict,
             (t_lo, t_hi) = t_loHiDict[i]
             resList = resultDict[i]
             #argsList.append((t_lo, t_hi, keyOrder, modelRNN, resList, sessionDictCurThread, sessionStreamDict, sessionLengthDict, max_lookback, configDict))
-            modelRNN._make_predict_function()
+            modelRNN.make_predict_function()
             threads[i] = threading.Thread(target=predictTopKIntentsPerThread, args=(i, t_lo, t_hi, keyOrder, schemaDicts, modelRNN, resList, sessionDictGlobal, sampledQueryHistory, sessionStreamDict, sessionLengthDict, max_lookback, configDict))
             threads[i].start()
         for i in range(numThreads):
@@ -926,6 +926,7 @@ def trainTestBatchWise(keyOrder, schemaDicts, sampledQueryHistory, queryKeysSetA
                                                                                                    ""+str(len(
             keyOrder)))
         if modelRNN is not None:
+            # batch预测
             assert configDict['INCLUDE_CUR_SESS'] == 'True' or configDict['INCLUDE_CUR_SESS'] == 'False'
             if configDict['INCLUDE_CUR_SESS'] == 'True':
                 resultDict = predictIntentsIncludeCurrentBatch(lo, hi, keyOrder, schemaDicts, resultDict,
@@ -943,6 +944,7 @@ def trainTestBatchWise(keyOrder, schemaDicts, sampledQueryHistory, queryKeysSetA
         (sessionDictGlobal, queryKeysSetAside) = updateGlobalSessionDict(lo, hi, keyOrder, queryKeysSetAside, sessionDictGlobal)
         if configDict['RNN_PREDICT_NOVEL_QUERIES'] == 'False':
             sampledQueryHistory = updateSampledQueryHistory(configDict, sampledQueryHistory, queryKeysSetAside, sessionStreamDict)
+        # batch训练
         (modelRNN, sessionDictGlobal, max_lookback) = refineTemporalPredictor(queryKeysSetAside, configDict, sessionDictGlobal,
                                                                         modelRNN, max_lookback, sessionStreamDict)
         if modelRNN is not None:
@@ -1066,9 +1068,12 @@ def runRNNSingularityExp(configDict):
      sessionStreamDict, keyOrder, startEpisode, outputIntentFileName, modelRNN, max_lookback, predictedY) = initRNNSingularity(configDict)
     assert configDict['RNN_SUSTENANCE'] == 'True' or configDict['RNN_SUSTENANCE'] == 'False'
     if configDict['RNN_SUSTENANCE'] == 'False':
+        # 整个数据集按batchSize划分为多个epoch，每个epoch对应一个batch，先对batch进行评测后，在进行这个batch的训练。
         trainTestBatchWise(keyOrder, schemaDicts, sampledQueryHistory, queryKeysSetAside, startEpisode, numEpisodes, episodeResponseTimeDictName, episodeResponseTime, outputIntentFileName, resultDict, sessionDictGlobal, sessionDictsThreads, sessionStreamDict, sessionLengthDict, modelRNN, max_lookback, configDict)
     elif configDict['RNN_SUSTENANCE'] == 'True':
-        evalSustenance(keyOrder, schemaDicts, sampledQueryHistory, queryKeysSetAside, startEpisode, numEpisodes, episodeResponseTimeDictName, episodeResponseTime, outputIntentFileName, resultDict, sessionDictGlobal, sessionDictsThreads, sessionStreamDict, sessionLengthDict, modelRNN, max_lookback, configDict)
+        evalSustenance(keyOrder, schemaDicts, sampledQueryHistory, queryKeysSetAside, startEpisode, numEpisodes,
+                       episodeResponseTimeDictName, episodeResponseTime, outputIntentFileName, resultDict, sessionDictGlobal,
+                       sessionDictsThreads, sessionStreamDict, sessionLengthDict, modelRNN, max_lookback, configDict)
     return
 
 def initRNNOneFoldTest(sessionStreamDict, testIntentSessionFile, configDict):
