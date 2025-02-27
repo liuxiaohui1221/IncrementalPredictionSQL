@@ -200,7 +200,7 @@ def createTemporalPairs(queryKeysSetAside, configDict, sessionDictGlobal, sessio
             updateSessionDictWithCurrentIntent(sessionDictGlobal, sessID, queryID)
         if int(queryID) > 0:
             (dataX, dataY) = appendTrainingXY(sessionStreamDict, sessID, queryID, configDict, dataX, dataY)
-    print("dataX,dataY shape", np.array(dataX).shape, np.array(dataY).shape)
+    # print("dataX,dataY shape", np.array(dataX).shape, np.array(dataY).shape)
     return (dataX, dataY)
 
 
@@ -1188,8 +1188,8 @@ def runFromExistingOutputInBetween(configDict):
 
 
 if __name__ == "__main__":
-    # -config configDir/BusTracker_Novel_RNN_singularity_configFile.txt
-    # configDict = parseConfig.parseConfigFile("configDir/BusTracker_Novel_RNN_singularity_configFile.txt")
+    # -config config_bak/BusTracker_Novel_RNN_singularity_configFile.txt
+    # configDict = parseConfig.parseConfigFile("config_bak/BusTracker_Novel_RNN_singularity_configFile.txt")
     parser = argparse.ArgumentParser()
     parser.add_argument("-config", help="Config parameters file", type=str, required=True)
     args = parser.parse_args()
