@@ -273,7 +273,7 @@ def createSingularityIntentVectors(sessionQueryDict, configDict):
 if __name__ == "__main__":
     current_dir = os.path.dirname(os.path.abspath(__file__))
     configDict = parseConfig.parseConfigFile(os.path.join(current_dir,
-                                                          "../config/APM_FragmentQueries_Keep_configFile.txt"))
+                                                          "../config/APM_Table_Realtime_FragmentQueries_Keep_configFile.txt"))
     # parser = argparse.ArgumentParser()
     # parser.add_argument("-config", help="Config parameters file", type=str, required=True)
     # args = parser.parse_args()APM

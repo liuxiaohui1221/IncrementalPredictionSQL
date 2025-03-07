@@ -28,7 +28,7 @@ Pre-created SQL fragment vectors for the BusTracker dataset are available at Bus
    - CONCURRENT_QUERY_SESSIONS(data/BusTracker/InputOutput/MincConcurrentSessions)、
    - BIT_FRAGMENT_TABLE_INTENT_SESSIONS(data/BusTracker/InputOutput/MincBitFragmentTableIntentSessions)
      指定的文件中。
-   - 其次，将上面的输出文件作为输入，sh scripts/runBusTrackerNovelRNNSingularity.sh执行 LSTM_RNN_Parallel_selOpConst.py
+   - 其次，将上面的输出文件作为输入，sh scripts/runApmNovelRNNSingularity.sh执行 LSTM_RNN_Parallel_selOpConst.py
 # Running the code:
 sh scripts/runBusTrackerNovelRNNSingularity.sh
 sh scripts/runBusTrackerCFCosineSimSingularity.sh
