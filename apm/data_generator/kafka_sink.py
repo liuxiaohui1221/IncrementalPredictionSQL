@@ -18,7 +18,7 @@ def generate_timestamp(realtime_percent=0.8, recent_percent=0.15,recent_days=7):
 
     if probability < realtime_percent:  # 80% 概率：最近 10 分钟
         delta = timedelta(minutes=random.randint(0, 10))
-    elif probability < realtime_percent+realtime_percent:  # 15% 概率：最近 1 天
+    elif probability < realtime_percent+recent_percent:  # 15% 概率：最近 1 天
         delta = timedelta(days=1, minutes=random.randint(0, 1440))  # 1 天 = 1440 分钟
     else:  # 5% 概率：最近 1 周
         delta = timedelta(days=recent_days, minutes=random.randint(0, 10080))  # 1 周 = 10080 分钟
@@ -57,8 +57,7 @@ def generate_ods_request():
         else:
             rate = random.randint(base_rate - 10, base_rate + 10)
         print("已发送条数：",total,"当前速率（条/分钟）：",rate)
-        random_time = datetime(2025, 3, 8)
-        # random_time = generate_timestamp()
+        random_time = generate_timestamp(realtime_percent=0.8, recent_percent=0.2,recent_days=5)
 
         for _ in range(rate // 60):  # 按秒均匀分布
             sys_id = np.random.choice(APPSYS_IDS, p=[0.3, 0.2, 0.1, 0.1, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05])
@@ -66,7 +65,8 @@ def generate_ods_request():
             # 时间乱序
             # random_time += timedelta(minutes=random.randint(1, 5))
             record = {
-                "ts":  datetime.now().isoformat(),
+                # "ts":  datetime.now().isoformat(),
+                "ts": datetime.now().isoformat(),
                 "appsysid": sys_id,
                 "appid": app_id,
                 "service_type": np.random.choice(["Java", "Go", "Python"], p=[0.6, 0.3, 0.1]),
