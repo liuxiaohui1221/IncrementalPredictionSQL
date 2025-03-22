@@ -34,6 +34,18 @@ sh scripts/runBusTrackerNovelRNNSingularity.sh
 sh scripts/runBusTrackerCFCosineSimSingularity.sh
 sh scripts/runBusTrackerQLSingularity.sh
 
-# 改造说明
-
 ## 按分钟尺度窗口进行query编码和训练
+select：维度，指标，每个指标聚合方式
+from: 表 
+where：滑动时间过滤条件
+group by：维度，时间粒度
+
+
+
+
+
+
+
+
+
+
