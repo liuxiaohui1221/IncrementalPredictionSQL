@@ -35,6 +35,7 @@ class SchemaDicts:
 
         # type4,table11,projection346,AVG346,MIN346,MAX346,SUM346,where346,groupBy346,orderBy346,having346,limit1
         self.queryTypeBitMapSize = 4  # select, insert, update, delete
+        self.granBitMapSize = 9
         self.limitBitMapSize = 1
         self.tableBitMapSize = estimateTableBitMapSize(self)
         self.allColumnsSize = estimateAllColumnCount(self)
@@ -42,7 +43,8 @@ class SchemaDicts:
 
         # the following requires careful order mapping
         self.queryTypeStartBitIndex = 0
-        self.tableStartBitIndex = self.queryTypeStartBitIndex + self.queryTypeBitMapSize
+        # self.tableStartBitIndex = self.queryTypeStartBitIndex + self.queryTypeBitMapSize
+        self.tableStartBitIndex=0
         self.projectionStartBitIndex = self.tableStartBitIndex + self.tableBitMapSize
         self.avgStartBitIndex = self.projectionStartBitIndex + self.allColumnsSize
         self.minStartBitIndex = self.avgStartBitIndex + self.allColumnsSize
@@ -52,11 +54,15 @@ class SchemaDicts:
         self.selectionStartBitIndex = self.sumStartBitIndex + self.allColumnsSize
         self.groupByStartBitIndex = self.selectionStartBitIndex + self.allColumnsSize  #where clause
         self.orderByStartBitIndex = self.groupByStartBitIndex + self.allColumnsSize
-        self.havingStartBitIndex = self.orderByStartBitIndex + self.allColumnsSize
-        self.limitStartBitIndex = self.havingStartBitIndex + self.allColumnsSize
-        self.joinPredicatesStartBitIndex = self.limitStartBitIndex + self.limitBitMapSize
-        self.allOpSize = (self.queryTypeBitMapSize + self.tableBitMapSize + self.allColumnsSize * 9 +
-                          self.limitBitMapSize)
+        # self.havingStartBitIndex = self.orderByStartBitIndex + self.allColumnsSize
+        # self.limitStartBitIndex = self.havingStartBitIndex + self.allColumnsSize
+        # self.joinPredicatesStartBitIndex = self.limitStartBitIndex + self.limitBitMapSize
+        # self.allOpSize = (self.queryTypeBitMapSize + self.tableBitMapSize + self.allColumnsSize * 9 +
+        #                   self.limitBitMapSize)
+        self.timeOffsetGranStartBitIndex = self.orderByStartBitIndex + self.allColumnsSize
+        self.timeRangeGranStartBitIndex = self.timeOffsetGranStartBitIndex + self.granBitMapSize
+        self.queryGranularityStartBitIndex = self.timeRangeGranStartBitIndex + self.granBitMapSize
+        self.allOpSize = (self.tableBitMapSize + self.allColumnsSize * 8 + self.granBitMapSize * 3)
         print("allOpSize: ", self.allOpSize)
         print("tableBitMapSize: ", self.tableBitMapSize)
         print("allColumnsSize: ", self.allColumnsSize)
