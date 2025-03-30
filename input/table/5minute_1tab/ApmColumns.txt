@@ -1,0 +1,1 @@
+dwm_request: [ts, type, group, appid, appsysid, agent, service_type, path, method, root_appid, pappid, pappsysid, papp_type, pagent, pagent_ip, uevent_model, uevent_id, user_id, session_id, host, ip_addr, province, city, page_id, page_group, status, err_4xx, err_5xx, status_code, tag, code, is_model, exception, biz, fail, httperr, neterr, err, tolerated, frustrated, dur]

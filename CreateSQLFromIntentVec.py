@@ -27,31 +27,59 @@ import ReverseEnggQueries
 import socket
 
 class SQLForBitMapIntent:
+    # 初始化SQLForBitMapIntent类
     def __init__(self, schemaDicts, intentBitVec, newSetBitPosList):
+        # 存储schema字典
         self.schemaDicts = schemaDicts
+        # 存储意图位向量
         self.intentBitVec = intentBitVec
+        # 存储新设置的位位置列表
         self.newSetBitPosList = newSetBitPosList
+        # 存储查询类型
         self.queryType = None
+        # 查询事件时间离散特征：周期，小时
+        self.queryTime = None
+        # 存储表名
         self.tables = []
+        # 存储投影列
         self.projCols = []
+        # 存储平均列
         self.avgCols = []
+        # 存储最小列
         self.minCols = []
+        # 存储最大列
         self.maxCols = []
+        # 存储求和列
         self.sumCols = []
+        # 存储计数列
         self.countCols = []
+        # 存储选择列
         self.selCols = []
+        # 存储分组列
         self.groupByCols = []
+        # 存储排序列
         self.orderByCols = []
+        # 存储筛选列
         self.havingCols = []
+        # 存储限制
         self.limit = None
+        # 存储连接谓词
         self.joinPreds = []
+        # 存储查询条件时间偏移量
+        self.timeOffset = None
+        # 存储查询条件时间范围
+        self.timeRange = None
+        # 存储查询聚合粒度
+        self.queryGran = None
+
 
 class SQLForIntentStr:
     def __init__(self, schemaDicts, intentVec):
         self.schemaDicts = schemaDicts
         self.intentVec = intentVec
         # following populates the required sub-bitmaps
-        self.queryTypeBitMap = self.intentVec[schemaDicts.queryTypeStartBitIndex:schemaDicts.queryTypeStartBitIndex + schemaDicts.queryTypeBitMapSize]
+        # self.queryTypeBitMap = self.intentVec[schemaDicts.queryTypeStartBitIndex:schemaDicts.queryTypeStartBitIndex + schemaDicts.queryTypeBitMapSize]
+        self.queryTimeBitMap = self.intentVec[schemaDicts.queryTimeStartBitIndex:schemaDicts.queryTimeStartBitIndex + schemaDicts.queryTimeBitMapSize]
         self.tableBitMap = self.intentVec[schemaDicts.tableStartBitIndex:schemaDicts.tableStartBitIndex + schemaDicts.tableBitMapSize]
         self.projectionBitMap = self.intentVec[schemaDicts.projectionStartBitIndex:schemaDicts.projectionStartBitIndex + schemaDicts.allColumnsSize]
         self.avgBitMap = self.intentVec[schemaDicts.avgStartBitIndex:schemaDicts.avgStartBitIndex + schemaDicts.allColumnsSize]
@@ -65,7 +93,11 @@ class SQLForIntentStr:
         self.havingBitMap = self.intentVec[schemaDicts.havingStartBitIndex:schemaDicts.havingStartBitIndex + schemaDicts.allColumnsSize]
         self.limitBitMap = self.intentVec[schemaDicts.limitStartBitIndex:schemaDicts.limitStartBitIndex + schemaDicts.limitBitMapSize]
         self.joinPredicatesBitMap = self.intentVec[schemaDicts.joinPredicatesStartBitIndex:schemaDicts.joinPredicatesStartBitIndex + schemaDicts.joinPredicatesBitMapSize]
+        self.timeOffsetBitMap = self.intentVec[schemaDicts.timeOffsetGranStartBitIndex:schemaDicts.timeOffsetGranStartBitIndex + schemaDicts.granBitMapSize]
+        self.timeRangeBitMap = self.intentVec[schemaDicts.timeRangeGranStartBitIndex:schemaDicts.timeRangeGranStartBitIndex + schemaDicts.granBitMapSize]
+        self.queryGranBitMap = self.intentVec[schemaDicts.queryGranStartBitIndex:schemaDicts.queryGranStartBitIndex + schemaDicts.granBitMapSize]
         self.queryType = None
+        self.queryTime = None
         self.tables = []
         self.projCols = []
         self.avgCols = []
@@ -79,6 +111,9 @@ class SQLForIntentStr:
         self.havingCols = []
         self.limit = None
         self.joinPreds = []
+        self.timeOffset = None
+        self.timeRange = None
+        self.queryGran = None
 
 
 def readIntentObjectsFromFile(intentFileName):
@@ -174,7 +209,8 @@ def populateJoinPredsStr(intentObj):
     return intentObj
 
 def createSQLFromIntentString(intentObj):
-    intentObj = populateQueryTypeStr(intentObj)
+    # intentObj = populateQueryTypeStr(intentObj)
+    intentObj = populateQueryTimeStr(intentObj)
     intentObj = populateTablesStr(intentObj)
     intentObj.projCols = populateColsForOpStr(intentObj.projCols, intentObj.projectionBitMap, intentObj)
     intentObj.avgCols = populateColsForOpStr(intentObj.avgCols, intentObj.projectionBitMap, intentObj)
@@ -296,10 +332,27 @@ def checkOpToPopulate(newSetBitPos, intentObj):
     else:
         print("not possible !!")
 
+
+def populateQueryTimeStr(intentObj):
+    assert len(intentObj.queryTimeBitMap) == intentObj.schemaDicts.queryTimeBitMapSize
+    week=-1
+    hour=-1
+    for i in range(len(intentObj.queryTimeBitMap)):
+        if int(intentObj.queryTimeBitMap[i]) == 1:
+            if(i<7):
+                week = i+1
+            else:
+                hour = i-7
+    intentObj.queryTime = str(week) + "w" + str(hour) + "h"
+    return intentObj
+
+
 def populateOps(intentObj, opsToPopulate):
     for opToPopulate in opsToPopulate:
         if opToPopulate == "querytype":
             intentObj = populateQueryTypeStr(intentObj)
+        elif opToPopulate == "querytime":
+            intentObj = populateQueryTimeStr(intentObj)
         elif opToPopulate == "table":
             intentObj = populateTablesStr(intentObj)
         elif opToPopulate == "project":
@@ -337,11 +390,15 @@ def createSQLFromIntentStringBitPos(intentObj, newSetBitPosList):
     #printSQLOps(intentObj)
 
 def populateSQLOpFromType(intentObj, sqlOp, opType):
-    assert opType == "querytype" or opType == "table" or opType == "project" or opType == "avg" or opType == "min" \
+    assert (opType == "querytype" or opType == "querytime" or opType == "table" or opType == "project" or opType ==
+            "avg" or opType == "min" \
            or opType == "max" or opType == "sum" or opType == "count" or opType == "select" or opType == "groupby" \
-           or opType == "orderby" or opType == "having" or opType == "limit" or opType == "join"
+           or opType == "orderby" or opType == "having" or opType == "limit" or opType == "join" or opType ==
+            "timeoffset" or opType == "timerange" or opType == "querygran")
     if opType == "querytype":
         intentObj.queryType = sqlOp
+    elif opType == "querytime":
+        intentObj.queryTime = sqlOp
     elif opType == "table":
         intentObj.tables.append(sqlOp)
     elif opType == "project":
@@ -368,32 +425,59 @@ def populateSQLOpFromType(intentObj, sqlOp, opType):
         intentObj.limit = "Limit"
     elif opType == "join":
         intentObj.joinPreds.append(sqlOp)
+    elif opType == "timeoffset":
+        intentObj.timeOffset=sqlOp
+    elif opType == "timerange":
+        intentObj.timeRange=sqlOp
+    elif opType == "querygran":
+        intentObj.queryGran=sqlOp
     else:
         print("OpError !!")
     return intentObj
 
 def createSQLTableFromIntentBits(intentObj):
+    # 遍历intentObj中的newSetBitPosList
     for setBitIndex in intentObj.newSetBitPosList:
+        # 计算tempIndex
         tempIndex = setBitIndex + intentObj.schemaDicts.tableStartBitIndex
+        # 如果tempIndex在forwardMapBitsToOps中
         if tempIndex in intentObj.schemaDicts.forwardMapBitsToOps:
+            # 获取setSQLOp
             setSQLOp = intentObj.schemaDicts.forwardMapBitsToOps[tempIndex]
+            # 将setSQLOp按";"分割
             opTokens = setSQLOp.split(";")
+            # 获取sqlOp
             sqlOp = opTokens[0]
+            # 断言sqlOp等于tableOrderDict中的setBitIndex
             assert sqlOp == intentObj.schemaDicts.tableOrderDict[setBitIndex]
+            # 获取opType
             opType = opTokens[1]
+            # 根据opType填充intentObj中的SQLOp
             intentObj = populateSQLOpFromType(intentObj, sqlOp, opType)
+    # 打印SQLOps
     #printSQLOps(intentObj)
+    # 返回intentObj
     return intentObj
 
 def createSQLFromIntentBits(intentObj):
+    # 遍历intentObj中的newSetBitPosList
     for setBitIndex in intentObj.newSetBitPosList:
+        # 如果setBitIndex在intentObj的schemaDicts.forwardMapBitsToOps中
         if setBitIndex in intentObj.schemaDicts.forwardMapBitsToOps:
+            # 获取setSQLOp
             setSQLOp = intentObj.schemaDicts.forwardMapBitsToOps[setBitIndex]
+            # 将setSQLOp按照";"分割，得到sqlOp和opType
             opTokens = setSQLOp.split(";")
             sqlOp = opTokens[0]
             opType = opTokens[1]
-            intentObj = populateSQLOpFromType(intentObj, sqlOp, opType)
+            if intentObj.schemaDicts.embeddingType=="table" and len(opTokens)==3:
+                #todo
+                opPos = opTokens[2]
+            else:
+                # 根据opType调用populateSQLOpFromType函数，得到新的intentObj
+                intentObj = populateSQLOpFromType(intentObj, sqlOp, opType)
     # printSQLOps(intentObj)
+    # 返回新的intentObj
     return intentObj
 
 def setBit(opDimBit, intentObj):
@@ -618,7 +702,7 @@ def fixNullProjColViolationsDefaultOtherQuery(intentObj, curIntentObj):
 
 def fixSQLViolations(intentObj, precOrRecallFavor, curIntentObj):
     assert precOrRecallFavor == "precision" or precOrRecallFavor == "recall"
-    fixNullQueryTypeWithPrevEffect(intentObj, curIntentObj)
+    # fixNullQueryTypeWithPrevEffect(intentObj, curIntentObj)
     # no need to fix tables -- they are fixed automatically while fixing other operators
     fixColumnTableViolations(intentObj, "project", precOrRecallFavor)
     fixColumnTableViolations(intentObj, "avg", precOrRecallFavor)
@@ -648,7 +732,7 @@ def convertOldToNewSetBitsTable(schemaDicts, setBitPosList):
     return newSetBitPosList
 
 def regenerateSQLTableOrig(topKCandidateVector, curIntentBitVec, schemaDicts, configDict):
-    setBitPosList = topKCandidateVector.nonzero()
+    setBitPosList = topKCandidateVector.nonzero() #返回非0元素索引
     #print setBitPosList
     #print schemaDicts.allOpSize
     newSetBitPosList = convertOldToNewSetBitsTable(schemaDicts, setBitPosList)
@@ -669,10 +753,12 @@ def regenerateSQL(dummyParam, topKCandidateVector, schemaDicts):
     return regenerateSQLOrig(topKCandidateVector, schemaDicts)
 
 def regenerateSQLOrig(topKCandidateVector, schemaDicts):
+    # 获取topKCandidateVector中非零元素的索引
     setBitPosList = topKCandidateVector.nonzero()
-    #print setBitPosList
+    # print("setBitPosList:",setBitPosList)
     #print schemaDicts.allOpSize
     newSetBitPosList = []
+    # 遍历setBitPosList中的每个元素
     for bitPos in setBitPosList:
         newBitPos = schemaDicts.allOpSize - 1 - bitPos # because 1s appear in reverse, no need to prune the extra padded bits
         newSetBitPosList.append(newBitPos)

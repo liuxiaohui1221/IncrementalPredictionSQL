@@ -111,12 +111,15 @@ def seqIntentVectorFilesPruneCrawler(configDict):
     return sessionQueryDict
 
 def seqIntentVectorFilesKeepCrawler(configDict):
+    # 获取配置文件中的文件名格式
     splitFileName = configDict['BIT_FRAGMENT_SEQ_SPLIT_NAME_FORMAT']
+    # 获取当前文件所在的目录
     current_dir = os.path.dirname(os.path.abspath(__file__))
+    # 初始化文件数量
     numFiles = 1
     sessionQueryDict = {} # key is session ID and value is line
     queryCount = 0
-    prevSessName = None
+    prevSessName = {}
     #sessID = int(configDict['BIT_FRAGMENT_START_SESS_INDEX'])-1
     sessID = -1
     relSessID = -1
@@ -128,12 +131,16 @@ def seqIntentVectorFilesKeepCrawler(configDict):
             line = line.strip()
             if len(line.split(";")) > 3:
                 line = removeExcessDelimiters(line)
+            if len(line.split(";"))>3:
+                tokens = line.split(";")
             assert len(line.split(";")) == 3
             tokens = line.split(";")
             sessName = tokens[0].split(", ")[0].split(" ")[1]
-            if sessName != prevSessName:
-                sessID+=1
-                prevSessName = sessName
+            if sessName in prevSessName:
+                sessID=prevSessName[sessName]
+            else:
+                sessID=int(sessName)
+                prevSessName[sessName]=sessID
             if sessID >= int(configDict['BIT_FRAGMENT_START_SESS_INDEX']):
                 if sessID not in sessionQueryDict:
                     sessionQueryDict[sessID] = []
@@ -213,74 +220,99 @@ def getConfigPath(param):
 
 
 def createSingularityIntentVectors(sessionQueryDict, configDict):
+    # 获取intentFile、concurrentFile、tableIntentFile的路径
     intentFile = getConfigPath(configDict['BIT_FRAGMENT_INTENT_SESSIONS'])
     concurrentFile = getConfigPath(configDict['CONCURRENT_QUERY_SESSIONS'])
     tableIntentFile = getConfigPath(configDict['BIT_FRAGMENT_TABLE_INTENT_SESSIONS'])
+    # 读取schemaDicts
     schemaDicts = ReverseEnggQueries.readSchemaDicts(configDict)
+    # 删除intentFile、concurrentFile、tableIntentFile
     tryDeletionIfExists(intentFile)
     tryDeletionIfExists(concurrentFile)
     tryDeletionIfExists(tableIntentFile)
+    # 初始化queryCount、queryIndex、absCount
     queryCount = 0
     queryIndex = 0
     absCount = 0
     # sessionQueryDict key为sessionid, value为list,
     # list中每个元素为query line: "Session 1, Query 1;original query;query bit vector"
     numSessions = len(sessionQueryDict)
+    # 当sessionQueryDict不为空时，循环
     while len(sessionQueryDict)!=0:
+        # 获取sessionQueryDict的key列表
         keyList = list(sessionQueryDict.keys())
+        # 随机打乱session顺序
         random.shuffle(keyList)
+        # queryIndex递增
         queryIndex += 1
+        # 遍历keyList
         for sessIndex in keyList:
             # print("size:", len(sessionQueryDict[sessIndex]))
+            # 获取sessQueryIntent
             sessQueryIntent = sessionQueryDict[sessIndex][0]
+            # 从sessionQueryDict中移除sessQueryIntent
             sessionQueryDict[sessIndex].remove(sessQueryIntent)
+            # 如果sessionQueryDict[sessIndex]为空，则删除sessIndex
             if len(sessionQueryDict[sessIndex]) == 0:
                 del sessionQueryDict[sessIndex]
             #queryIndexRec = sessQueryIntent.split(";")[0].split(", ")[1].split(" ")[1]
             #if queryIndexRec != str(queryIndex):
                 #print "queryIndexRec != queryIndex !!"
             #assert queryIndexRec == str(queryIndex)
+            # 将sessQueryIntent按";"分割
             tokens = sessQueryIntent.split(";")
             print("query intent:",len(tokens[2]))
+            # 断言tokens的长度为3
             assert len(tokens) == 3
+            # 断言queryCount>=0
             assert queryCount>=0
+            # 如果queryCount为0，则初始化output_str、output_table_str、conc_str
             if queryCount == 0:
                 output_str = "Session " + str(sessIndex) + ", Query " + str(queryIndex) + ";" + tokens[1] + ";" + tokens[2]
                 output_table_str = "Session " + str(sessIndex) + ", Query " + str(queryIndex) + ";" + tokens[1] + ";" + \
                              tokens[2][schemaDicts.tableStartBitIndex:schemaDicts.tableStartBitIndex+schemaDicts.tableBitMapSize]
                 conc_str = "Session " + str(sessIndex) + ", Query " + str(queryIndex) + ";" + tokens[1].split(":")[1]
             else:
+                # 否则，将output_str、output_table_str、conc_str追加
                 output_str += "\nSession " + str(sessIndex) + ", Query " + str(queryIndex) + ";" + tokens[1] + ";" + tokens[2]
                 output_table_str += "\nSession " + str(sessIndex) + ", Query " + str(queryIndex) + ";" + tokens[1] + ";" + \
                                    tokens[2][schemaDicts.tableStartBitIndex:schemaDicts.tableStartBitIndex + schemaDicts.tableBitMapSize]
                 conc_str += "\nSession " + str(sessIndex) + ", Query " + str(queryIndex) + ";" + tokens[1].split(":")[1]
+            # queryCount递增
             queryCount += 1
+            # absCount递增
             absCount+=1
+            # 如果queryCount % 100 == 0，则将output_str、conc_str、output_table_str写入文件
             if queryCount % 100 == 0:
                 ti.appendToFile(intentFile, output_str)
                 ti.appendToFile(concurrentFile, conc_str)
                 ti.appendToFile(tableIntentFile, output_table_str)
+                # queryCount置为0
                 queryCount = 0
+            # 如果absCount % 10000 == 0，则打印信息
             if absCount % 10000 == 0:
                 print("appended Session " + str(sessIndex) + ", Query " + str(queryIndex) + ", absQueryCount: " + str(absCount))
+    # 如果queryCount > 0，则将output_str、conc_str、output_table_str写入文件
     if queryCount > 0:
         ti.appendToFile(intentFile, output_str)
         ti.appendToFile(concurrentFile, conc_str)
         ti.appendToFile(tableIntentFile, output_table_str)
+    # 打印信息
     print("Created intent vectors for # Sessions: "+str(numSessions)+" and # Queries: "+str(absCount))
 
 
 if __name__ == "__main__":
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    configDict = parseConfig.parseConfigFile(os.path.join(current_dir,
-                                                          "../config/APM_Table_Realtime_FragmentQueries_Keep_configFile.txt"))
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument("-config", help="Config parameters file", type=str, required=True)
-    # args = parser.parse_args()APM
-    # configDict = parseConfig.parseConfigFile(args.config)
+    # configDict = parseConfig.parseConfigFile(os.path.join(current_dir,
+    #                                                       "../config/APM_Table_Realtime_FragmentQueries_Keep_configFile.txt"))
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-config", help="Config parameters file", type=str, required=True)
+    args = parser.parse_args()
+    configDict = parseConfig.parseConfigFile(args.config)
     assert configDict["BIT_OR_WEIGHTED"] == "BIT"
     fragmentIntentSessionsFile = os.path.join(current_dir,"../"+getConfig(configDict['BIT_FRAGMENT_INTENT_SESSIONS']))
     try:
+        print("Deleting existing file: "+fragmentIntentSessionsFile)
         os.remove(fragmentIntentSessionsFile)
     except OSError:
         pass

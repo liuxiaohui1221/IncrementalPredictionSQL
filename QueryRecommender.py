@@ -177,7 +177,8 @@ def updateResponseTime(episodeResponseTimeDictName, episodeResponseTime, numEpis
     return (episodeResponseTimeDictName, episodeResponseTime, startEpisode, elapsedAppendTime)
 
 def createQueryExecIntentCreationTimes(configDict):
-    assert configDict['DATASET'] == 'NYCTaxitrips' or configDict['DATASET'] == 'MINC' or configDict['DATASET'] == 'BusTracker'
+    # assert (configDict['DATASET'].lower()== 'apm' or configDict['DATASET'] == 'MINC' or configDict['DATASET'] ==
+    #         'BusTracker')
     numQueries = 0
     episodeQueryExecutionTime = {}
     episodeIntentCreationTime = {}
@@ -232,33 +233,47 @@ def writeToPickleFile(fileName, writeObj):
         pickle.dump(writeObj, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 def computeBitFMeasure(actualQueryIntent, topKQueryIntent):
+    # 断言actualQueryIntent和topKQueryIntent的大小相等
     assert actualQueryIntent.size() == topKQueryIntent.size()
     TP=0
     FP=0
     TN=0
     FN=0
+    # 遍历actualQueryIntent和topKQueryIntent的每一个元素
     for pos in range(actualQueryIntent.size()):
+        # 如果actualQueryIntent和topKQueryIntent的元素都为真，则TP+1
         if actualQueryIntent.test(pos) and topKQueryIntent.test(pos):
             TP+=1
+        # 如果actualQueryIntent和topKQueryIntent的元素都为假，则TN+1
         elif not actualQueryIntent.test(pos) and not topKQueryIntent.test(pos):
             TN+=1
+        # 如果actualQueryIntent的元素为真，topKQueryIntent的元素为假，则FN+1
         elif actualQueryIntent.test(pos) and not topKQueryIntent.test(pos):
             FN+=1
+        # 如果actualQueryIntent的元素为假，topKQueryIntent的元素为真，则FP+1
         elif not actualQueryIntent.test(pos) and topKQueryIntent.test(pos):
             FP+=1
+    # 如果TP和FP都为0，则precision为0.0
     if TP == 0 and FP == 0:
         precision = 0.0
     else:
+        # 否则，precision为TP/(TP+FP)
         precision = float(TP)/float(TP+FP)
+    # 如果TP和FN都为0，则recall为0.0
     if TP == 0 and FN == 0:
         recall = 0.0
     else:
+        # 否则，recall为TP/(TP+FN)
         recall = float(TP)/float(TP+FN)
+    # 如果precision和recall都为0，则FMeasure为0.0
     if precision == 0.0 and recall == 0.0:
         FMeasure = 0.0
     else:
+        # 否则，FMeasure为2*precision*recall/(precision+recall)
         FMeasure = 2 * precision * recall / (precision + recall)
+    # accuracy为(TP+TN)/(TP+FP+TN+FN)
     accuracy = float(TP+TN)/float(TP+FP+TN+FN)
+    # 返回precision、recall、FMeasure和accuracy
     return (precision, recall, FMeasure, accuracy)
 
 def computeWeightedFMeasure(actualQueryIntent, topKQueryIntent, delimiter, configDict):
@@ -307,7 +322,7 @@ def computeQueRIEFMeasureForEachEpisode(line, configDict):
         actualQueryIntent = BitMap.fromstring(tokens[3].split(":")[1])
     elif configDict['BIT_OR_WEIGHTED'] == 'WEIGHTED':
         actualQueryIntent = tokens[3].split(":")[1]
-    for i in range(4, len(tokens)):
+    for i in range(4, len(tokens)):#从4位置开始取出预测的topK个query intent
         if configDict['BIT_OR_WEIGHTED'] == 'BIT':
             topKQueryIntent = BitMap.fromstring(tokens[i].split(":")[1])
             (precision, recall, FMeasure, accuracy) = computeBitFMeasure(actualQueryIntent, topKQueryIntent)
@@ -430,6 +445,7 @@ def evaluateQualityPredictions(outputIntentFileName, configDict, accThres, algoN
         pass
     with open(outputIntentFileName,encoding='utf-8') as f:
         for line in f:
+            # 评估性能
             (sessID, queryID, numEpisodes, accuracy, precision, recall, FMeasure, maxFIndex) = computeAccuracyForEachEpisode(line,
                                                                                                         configDict)
             outputEvalQualityStr = "Session:" + str(sessID) + ";Query:" + str(queryID) + ";#Episodes:" + str(

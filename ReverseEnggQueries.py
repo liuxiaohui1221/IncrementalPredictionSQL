@@ -26,15 +26,22 @@ from multiprocessing import Array
 import CreateSQLFromIntentVec
 
 class SchemaDicts:
-    def __init__(self, tableDict, tableOrderDict, colDict, joinPredDict, joinPredBitPosDict):
+    def __init__(self, tableDict, tableOrderDict, colDict, joinPredDict, joinPredBitPosDict,
+                 topQueryN,embeddingType):
+        self.queryTimeBitMapSize = 31 #7day and 24hour
         self.tableDict = tableDict
         self.tableOrderDict = tableOrderDict
         self.colDict = colDict
         self.joinPredDict = joinPredDict
         self.joinPredBitPosDict = joinPredBitPosDict
+        self.topQueryN = topQueryN
+        self.embeddingType = embeddingType
 
-        # type4,table11,projection346,AVG346,MIN346,MAX346,SUM346,where346,groupBy346,orderBy346,having346,limit1
-        self.queryTypeBitMapSize = 4  # select, insert, update, delete
+        # eventTime7+24,table11,projection346,AVG346,MIN346,MAX346,SUM346,where346,groupBy346,orderBy346,
+        # whereTimeOffset9,whereTimeRange9,queryGran9
+        # self.queryTypeBitMapSize = 4  # select, insert, update, delete
+
+        self.GRANULARITY_SECONDS =[1*60, 5*60, 30*60, 60*60, 24*3600, 7*24*3600, 30*24*3600, 3*30*24*3600, 365*24*3600]
         self.granBitMapSize = 9
         self.limitBitMapSize = 1
         self.tableBitMapSize = estimateTableBitMapSize(self)
@@ -44,34 +51,80 @@ class SchemaDicts:
         # the following requires careful order mapping
         self.queryTypeStartBitIndex = 0
         # self.tableStartBitIndex = self.queryTypeStartBitIndex + self.queryTypeBitMapSize
-        self.tableStartBitIndex=0
-        self.projectionStartBitIndex = self.tableStartBitIndex + self.tableBitMapSize
-        self.avgStartBitIndex = self.projectionStartBitIndex + self.allColumnsSize
-        self.minStartBitIndex = self.avgStartBitIndex + self.allColumnsSize
-        self.maxStartBitIndex = self.minStartBitIndex + self.allColumnsSize
-        self.sumStartBitIndex = self.maxStartBitIndex + self.allColumnsSize
-        # self.countStartBitIndex = self.sumStartBitIndex + self.allColumnsSize
-        self.selectionStartBitIndex = self.sumStartBitIndex + self.allColumnsSize
-        self.groupByStartBitIndex = self.selectionStartBitIndex + self.allColumnsSize  #where clause
-        self.orderByStartBitIndex = self.groupByStartBitIndex + self.allColumnsSize
-        # self.havingStartBitIndex = self.orderByStartBitIndex + self.allColumnsSize
-        # self.limitStartBitIndex = self.havingStartBitIndex + self.allColumnsSize
-        # self.joinPredicatesStartBitIndex = self.limitStartBitIndex + self.limitBitMapSize
-        # self.allOpSize = (self.queryTypeBitMapSize + self.tableBitMapSize + self.allColumnsSize * 9 +
-        #                   self.limitBitMapSize)
-        self.timeOffsetGranStartBitIndex = self.orderByStartBitIndex + self.allColumnsSize
-        self.timeRangeGranStartBitIndex = self.timeOffsetGranStartBitIndex + self.granBitMapSize
-        self.queryGranularityStartBitIndex = self.timeRangeGranStartBitIndex + self.granBitMapSize
-        self.allOpSize = (self.tableBitMapSize + self.allColumnsSize * 8 + self.granBitMapSize * 3)
+
+        if embeddingType=="table":
+            self.tableStartBitIndex=0
+            self.topQueryIntents = [[0 for _ in range(self.topQueryN)] for _ in range(self.tableBitMapSize)]
+            curStartQueryIndex=0
+            initTableLevelStartIndex = self.tableBitMapSize
+            for i in range(0,self.tableBitMapSize):
+                for j in range(0,self.topQueryN):
+                    curStartQueryIndex= initTableLevelStartIndex + j*(self.queryTimeBitMapSize +
+                                                                                  self.allColumnsSize * 8 +
+                                                 self.granBitMapSize * 3)
+                    queryTimeStartBitIndex = curStartQueryIndex
+                    projectionStartBitIndex = queryTimeStartBitIndex + self.queryTimeBitMapSize
+                    avgStartBitIndex = projectionStartBitIndex + self.allColumnsSize
+                    minStartBitIndex = avgStartBitIndex + self.allColumnsSize
+                    maxStartBitIndex = minStartBitIndex + self.allColumnsSize
+                    sumStartBitIndex = maxStartBitIndex + self.allColumnsSize
+                    # self.countStartBitIndex = self.sumStartBitIndex + self.allColumnsSize
+                    selectionStartBitIndex = sumStartBitIndex + self.allColumnsSize
+                    groupByStartBitIndex = selectionStartBitIndex + self.allColumnsSize  # where clause
+                    orderByStartBitIndex = groupByStartBitIndex + self.allColumnsSize
+                    timeOffsetGranStartBitIndex = orderByStartBitIndex + self.allColumnsSize
+                    timeRangeGranStartBitIndex = timeOffsetGranStartBitIndex + self.granBitMapSize
+                    queryGranStartBitIndex = timeRangeGranStartBitIndex + self.granBitMapSize
+                    self.topQueryIntents[i][j]= [queryTimeStartBitIndex,projectionStartBitIndex,avgStartBitIndex,minStartBitIndex,
+                                                 maxStartBitIndex,sumStartBitIndex,selectionStartBitIndex,groupByStartBitIndex,
+                                                 orderByStartBitIndex,timeOffsetGranStartBitIndex,timeRangeGranStartBitIndex,queryGranStartBitIndex]
+                initTableLevelStartIndex = curStartQueryIndex + self.queryTimeBitMapSize + self.allColumnsSize * 8 + self.granBitMapSize * 3
+            self.allOpSize = (
+                    self.tableBitMapSize +
+                    self.tableBitMapSize*topQueryN*(self.queryTimeBitMapSize + self.allColumnsSize * 8 +
+                                                 self.granBitMapSize * 3))
+            print(f"allOpSize: [{self.allOpSize}]=tableBitMapSize[{self.tableBitMapSize}] "
+                  f"+ tableBitMapSize[{self.tableBitMapSize}]*topQueryN[{self.topQueryN}]*(queryTimeBitMapSize[{self.queryTimeBitMapSize}] + "
+                  f"allColumnsSize[{self.allColumnsSize}] * 8 + granBitMapSize[{self.granBitMapSize}] * 3)["
+                  f"{self.queryTimeBitMapSize + self.allColumnsSize * 8 + self.granBitMapSize * 3}]")
+            # the following populates the map which can look up from bits to maps and from maps to bits
+            self.forwardMapBitsToOps = {}
+            self.backwardMapOpsToBits = {}
+            (self.forwardMapBitsToOps, self.backwardMapOpsToBits) = populateTableSeqBiDirectionalLookupMap(self)
+        else:
+            self.queryTimeStartBitIndex = 0
+            self.tableStartBitIndex = self.queryTimeStartBitIndex + self.queryTimeBitMapSize
+            self.projectionStartBitIndex = self.tableStartBitIndex + self.tableBitMapSize
+            self.avgStartBitIndex = self.projectionStartBitIndex + self.allColumnsSize
+            self.minStartBitIndex = self.avgStartBitIndex + self.allColumnsSize
+            self.maxStartBitIndex = self.minStartBitIndex + self.allColumnsSize
+            self.sumStartBitIndex = self.maxStartBitIndex + self.allColumnsSize
+            # self.countStartBitIndex = self.sumStartBitIndex + self.allColumnsSize
+            self.selectionStartBitIndex = self.sumStartBitIndex + self.allColumnsSize
+            self.groupByStartBitIndex = self.selectionStartBitIndex + self.allColumnsSize  # where clause
+            self.orderByStartBitIndex = self.groupByStartBitIndex + self.allColumnsSize
+            # self.havingStartBitIndex = self.orderByStartBitIndex + self.allColumnsSize
+            # self.limitStartBitIndex = self.havingStartBitIndex + self.allColumnsSize
+            # self.joinPredicatesStartBitIndex = self.limitStartBitIndex + self.limitBitMapSize
+            # self.allOpSize = (self.queryTypeBitMapSize + self.tableBitMapSize + self.allColumnsSize * 9 +
+            #                   self.limitBitMapSize)
+            self.timeOffsetGranStartBitIndex = self.orderByStartBitIndex + self.allColumnsSize
+            self.timeRangeGranStartBitIndex = self.timeOffsetGranStartBitIndex + self.granBitMapSize
+            self.queryGranStartBitIndex = self.timeRangeGranStartBitIndex + self.granBitMapSize
+
+            self.allOpSize = (self.queryTimeBitMapSize + self.tableBitMapSize + self.allColumnsSize * 8 + self.granBitMapSize
+                          * 3)
+
+            # the following populates the map which can look up from bits to maps and from maps to bits
+            self.forwardMapBitsToOps = {}
+            self.backwardMapOpsToBits = {}
+            (self.forwardMapBitsToOps, self.backwardMapOpsToBits) = populateBiDirectionalLookupMap(self)
         print("allOpSize: ", self.allOpSize)
         print("tableBitMapSize: ", self.tableBitMapSize)
         print("allColumnsSize: ", self.allColumnsSize)
         print("limitBitMapSize: ", self.limitBitMapSize)
         # + self.joinPredicatesBitMapSize)
-        # the following populates the map which can look up from bits to maps and from maps to bits
-        self.forwardMapBitsToOps = {}
-        self.backwardMapOpsToBits = {}
-        (self.forwardMapBitsToOps, self.backwardMapOpsToBits) = populateBiDirectionalLookupMap(self)
+
 
 def populateQueryType(schemaDicts):
     schemaDicts.forwardMapBitsToOps[0] = "select;querytype"
@@ -92,11 +145,60 @@ def populateTables(schemaDicts):
         indexToSet += 1
     assert indexToSet == schemaDicts.tableStartBitIndex + schemaDicts.tableBitMapSize
     return schemaDicts
-
-def populateColsForOp(opString, schemaDicts):
+def populateTableSeqColsForOp(opString, schemaDicts, tableLevel, queryLevel):
+    # 断言opString的值必须是以下之一：project、avg、min、max、sum、count、select、groupby、orderby、having
     assert opString == "project" or opString == "avg" or opString == "min" or opString == "max" or opString == "sum" \
            or opString == "count" or opString == "select" or opString == "groupby" \
            or opString == "orderby" or opString == "having"
+    # 根据opString的值，设置startBitIndex的值
+    if opString == "project":
+        startBitIndex = schemaDicts.topQueryIntents[tableLevel][queryLevel][1]
+    elif opString == "avg":
+        startBitIndex = schemaDicts.topQueryIntents[tableLevel][queryLevel][2]
+    elif opString == "min":
+        startBitIndex = schemaDicts.topQueryIntents[tableLevel][queryLevel][3]
+    elif opString == "max":
+        startBitIndex = schemaDicts.topQueryIntents[tableLevel][queryLevel][4]
+    elif opString == "sum":
+        startBitIndex = schemaDicts.topQueryIntents[tableLevel][queryLevel][5]
+    elif opString == "count":
+        startBitIndex = schemaDicts.countStartBitIndex
+    elif opString == "select":
+        startBitIndex = schemaDicts.topQueryIntents[tableLevel][queryLevel][6]
+    elif opString == "groupby":
+        startBitIndex = schemaDicts.topQueryIntents[tableLevel][queryLevel][7]
+    elif opString == "orderby":
+        startBitIndex = schemaDicts.topQueryIntents[tableLevel][queryLevel][8]
+    # elif opString == "having":
+    #     startBitIndex = schemaDicts.havingStartBitIndex
+    else:
+        print("ColError !!")
+    # 初始化indexToSet的值为startBitIndex
+    indexToSet = startBitIndex
+    # 遍历schemaDicts.tableOrderDict中的每一个表名
+    for tableIndex in range(len(schemaDicts.tableOrderDict)):
+        tableName = schemaDicts.tableOrderDict[tableIndex]
+        # 获取该表的所有列名
+        colList = schemaDicts.colDict[tableName]
+        # 遍历该表的所有列名
+        for col in colList:
+            # 将表名、列名和opString拼接成一个字符串，并存储到schemaDicts.forwardMapBitsToOps中
+            schemaDicts.forwardMapBitsToOps[indexToSet] = tableName+"."+col+";"+opString+";"+str(tableLevel)+","+str(queryLevel)
+            # 将拼接后的字符串作为键，indexToSet作为值，存储到schemaDicts.backwardMapOpsToBits中
+            schemaDicts.backwardMapOpsToBits[tableName+"."+col+";"+opString+";"+str(tableLevel)+","+str(queryLevel)] = indexToSet
+            # indexToSet自增
+            indexToSet+=1
+    # 断言indexToSet的值等于startBitIndex加上schemaDicts.allColumnsSize
+    assert indexToSet == startBitIndex + schemaDicts.allColumnsSize
+    # 返回schemaDicts
+    return schemaDicts
+
+def populateColsForOp(opString, schemaDicts):
+    # 断言opString的值必须是以下之一：project、avg、min、max、sum、count、select、groupby、orderby、having
+    assert opString == "project" or opString == "avg" or opString == "min" or opString == "max" or opString == "sum" \
+           or opString == "count" or opString == "select" or opString == "groupby" \
+           or opString == "orderby" or opString == "having"
+    # 根据opString的值，设置startBitIndex的值
     if opString == "project":
         startBitIndex = schemaDicts.projectionStartBitIndex
     elif opString == "avg":
@@ -115,19 +217,28 @@ def populateColsForOp(opString, schemaDicts):
         startBitIndex = schemaDicts.groupByStartBitIndex
     elif opString == "orderby":
         startBitIndex = schemaDicts.orderByStartBitIndex
-    elif opString == "having":
-        startBitIndex = schemaDicts.havingStartBitIndex
+    # elif opString == "having":
+    #     startBitIndex = schemaDicts.havingStartBitIndex
     else:
         print("ColError !!")
+    # 初始化indexToSet的值为startBitIndex
     indexToSet = startBitIndex
+    # 遍历schemaDicts.tableOrderDict中的每一个表名
     for tableIndex in range(len(schemaDicts.tableOrderDict)):
         tableName = schemaDicts.tableOrderDict[tableIndex]
+        # 获取该表的所有列名
         colList = schemaDicts.colDict[tableName]
+        # 遍历该表的所有列名
         for col in colList:
+            # 将表名、列名和opString拼接成一个字符串，并存储到schemaDicts.forwardMapBitsToOps中
             schemaDicts.forwardMapBitsToOps[indexToSet] = tableName+"."+col+";"+opString
+            # 将拼接后的字符串作为键，indexToSet作为值，存储到schemaDicts.backwardMapOpsToBits中
             schemaDicts.backwardMapOpsToBits[tableName+"."+col+";"+opString] = indexToSet
+            # indexToSet自增
             indexToSet+=1
+    # 断言indexToSet的值等于startBitIndex加上schemaDicts.allColumnsSize
     assert indexToSet == startBitIndex + schemaDicts.allColumnsSize
+    # 返回schemaDicts
     return schemaDicts
 
 def populateLimit(schemaDicts):
@@ -150,8 +261,123 @@ def populateJoinPreds(schemaDicts):
             schemaDicts.backwardMapOpsToBits[joinStrToAppend + ";" + opString] = indexToSet
     return schemaDicts
 
+
+def populateQueryTime(schemaDicts):
+    # 周1-7
+    schemaDicts.forwardMapBitsToOps[schemaDicts.queryTimeStartBitIndex] = "Mon;querytime"
+    schemaDicts.backwardMapOpsToBits["Mon;querytime"] = schemaDicts.queryTimeStartBitIndex
+
+    schemaDicts.forwardMapBitsToOps[schemaDicts.queryTimeStartBitIndex+1] = "Tue;querytime"
+    schemaDicts.backwardMapOpsToBits["Tue;querytime"] = schemaDicts.queryTimeStartBitIndex+1
+
+    schemaDicts.forwardMapBitsToOps[schemaDicts.queryTimeStartBitIndex+2] = "Wed;querytime"
+    schemaDicts.backwardMapOpsToBits["Wed;querytime"] = schemaDicts.queryTimeStartBitIndex+2
+
+    schemaDicts.forwardMapBitsToOps[schemaDicts.queryTimeStartBitIndex+3] = "Thu;querytime"
+    schemaDicts.backwardMapOpsToBits["Thu;querytime"] = schemaDicts.queryTimeStartBitIndex+3
+
+    schemaDicts.forwardMapBitsToOps[schemaDicts.queryTimeStartBitIndex+4] = "Fri;querytime"
+    schemaDicts.backwardMapOpsToBits["Fri;querytime"] = schemaDicts.queryTimeStartBitIndex+4
+
+    schemaDicts.forwardMapBitsToOps[schemaDicts.queryTimeStartBitIndex+5] = "Sat;querytime"
+    schemaDicts.backwardMapOpsToBits["Sat;querytime"] = schemaDicts.queryTimeStartBitIndex+5
+
+    schemaDicts.forwardMapBitsToOps[schemaDicts.queryTimeStartBitIndex+6] = "Sun;querytime"
+    schemaDicts.backwardMapOpsToBits["Sun;querytime"] = schemaDicts.queryTimeStartBitIndex+6
+    #1-24hour
+    for i in range(24):
+        schemaDicts.forwardMapBitsToOps[schemaDicts.queryTimeStartBitIndex+7+i] = str(i)+"h;querytime"
+        schemaDicts.backwardMapOpsToBits[str(i)+"h;querytime"] = schemaDicts.queryTimeStartBitIndex+7+i
+    return schemaDicts
+
+def populateTimeGranularity(opString, schemaDicts):
+    if opString == "timeoffset":
+        startBitIndex = schemaDicts.timeOffsetGranStartBitIndex
+    elif opString == "timerange":
+        startBitIndex = schemaDicts.timeRangeGranStartBitIndex
+    elif opString == "querygran":
+        startBitIndex = schemaDicts.queryGranStartBitIndex
+    else:
+        print("Invalid opString",opString)
+
+    for i in range(len(schemaDicts.GRANULARITY_SECONDS)):
+        schemaDicts.forwardMapBitsToOps[startBitIndex+i] = str(schemaDicts.GRANULARITY_SECONDS[i])+"s;"+opString
+        schemaDicts.backwardMapOpsToBits[str(schemaDicts.GRANULARITY_SECONDS[i])+"s;"+opString] = startBitIndex+i
+    return schemaDicts
+
+def populateTableSeqQueryTime(schemaDicts,tableIndex,queryIndex):
+    # 周1-7
+    schemaDicts.forwardMapBitsToOps[schemaDicts.topQueryIntents[tableIndex][queryIndex][0]] = (
+            "Mon;querytime"+";"+str(tableIndex)+","+str(queryIndex))
+    schemaDicts.backwardMapOpsToBits["Mon;querytime"+";"+str(tableIndex)+","+str(queryIndex)] = schemaDicts.topQueryIntents[tableIndex][queryIndex][0]
+
+    schemaDicts.forwardMapBitsToOps[schemaDicts.topQueryIntents[tableIndex][queryIndex][0]+1] = "Tue;querytime"+";"+str(tableIndex)+","+str(queryIndex)
+    schemaDicts.backwardMapOpsToBits["Tue;querytime"+";"+str(tableIndex)+","+str(queryIndex)] = schemaDicts.topQueryIntents[tableIndex][queryIndex][0]+1
+
+    schemaDicts.forwardMapBitsToOps[schemaDicts.topQueryIntents[tableIndex][queryIndex][0]+2] = "Wed;querytime"+";"+str(tableIndex)+","+str(queryIndex)
+    schemaDicts.backwardMapOpsToBits["Wed;querytime"+";"+str(tableIndex)+","+str(queryIndex)] = schemaDicts.topQueryIntents[tableIndex][queryIndex][0]+2
+
+    schemaDicts.forwardMapBitsToOps[schemaDicts.topQueryIntents[tableIndex][queryIndex][0]+3] = "Thu;querytime"+";"+str(tableIndex)+","+str(queryIndex)
+    schemaDicts.backwardMapOpsToBits["Thu;querytime"+";"+str(tableIndex)+","+str(queryIndex)] = schemaDicts.topQueryIntents[tableIndex][queryIndex][0]+3
+
+    schemaDicts.forwardMapBitsToOps[schemaDicts.topQueryIntents[tableIndex][queryIndex][0]+4] = "Fri;querytime"+";"+str(tableIndex)+","+str(queryIndex)
+    schemaDicts.backwardMapOpsToBits["Fri;querytime"+";"+str(tableIndex)+","+str(queryIndex)] = schemaDicts.topQueryIntents[tableIndex][queryIndex][0]+4
+
+    schemaDicts.forwardMapBitsToOps[schemaDicts.topQueryIntents[tableIndex][queryIndex][0]+5] = "Sat;querytime"+";"+str(tableIndex)+","+str(queryIndex)
+    schemaDicts.backwardMapOpsToBits["Sat;querytime"+";"+str(tableIndex)+","+str(queryIndex)] = schemaDicts.topQueryIntents[tableIndex][queryIndex][0]+5
+
+    schemaDicts.forwardMapBitsToOps[schemaDicts.topQueryIntents[tableIndex][queryIndex][0]+6] = "Sun;querytime"+";"+str(tableIndex)+","+str(queryIndex)
+    schemaDicts.backwardMapOpsToBits["Sun;querytime"+";"+str(tableIndex)+","+str(queryIndex)] = schemaDicts.topQueryIntents[tableIndex][queryIndex][0]+6
+    #1-24hour
+    for i in range(24):
+        schemaDicts.forwardMapBitsToOps[schemaDicts.topQueryIntents[tableIndex][queryIndex][0]+7+i] = str(i)+"h;querytime"+";"+str(tableIndex)+","+str(queryIndex)
+        schemaDicts.backwardMapOpsToBits[str(i)+"h;querytime"+";"+str(tableIndex)+","+str(queryIndex)] = schemaDicts.topQueryIntents[tableIndex][queryIndex][0]+7+i
+    return schemaDicts
+
+def populateTableSeqTimeGranularity(opString, schemaDicts,tableIndex,queryIndex):
+    if opString == "timeoffset":
+        startBitIndex = schemaDicts.topQueryIntents[tableIndex][queryIndex][-3]
+    elif opString == "timerange":
+        startBitIndex = schemaDicts.topQueryIntents[tableIndex][queryIndex][-2]
+    elif opString == "querygran":
+        startBitIndex = schemaDicts.topQueryIntents[tableIndex][queryIndex][-1]
+    else:
+        print("Invalid opString",opString)
+
+    for i in range(len(schemaDicts.GRANULARITY_SECONDS)):
+        schemaDicts.forwardMapBitsToOps[startBitIndex+i] = str(schemaDicts.GRANULARITY_SECONDS[i])+"s;"+opString+";"+str(tableIndex)+","+str(queryIndex)
+        schemaDicts.backwardMapOpsToBits[str(schemaDicts.GRANULARITY_SECONDS[i])+"s;"+opString+";"+str(tableIndex)+","+str(queryIndex)] = startBitIndex+i
+    return schemaDicts
+
+def populateTableSeqBiDirectionalLookupMap(schemaDicts):
+    # schemaDicts = populateQueryType(schemaDicts)
+    schemaDicts = populateTables(schemaDicts)
+    for i in range(0, schemaDicts.tableBitMapSize):
+        for j in range(0, schemaDicts.topQueryN):
+            schemaDicts = populateTableSeqQueryTime(schemaDicts,i,j)
+            schemaDicts = populateTableSeqColsForOp("project", schemaDicts,i,j)
+            schemaDicts = populateTableSeqColsForOp("avg", schemaDicts,i,j)
+            schemaDicts = populateTableSeqColsForOp("min", schemaDicts,i,j)
+            schemaDicts = populateTableSeqColsForOp("max", schemaDicts,i,j)
+            schemaDicts = populateTableSeqColsForOp("sum", schemaDicts,i,j)
+            # schemaDicts = populateColsForOp("count", schemaDicts)
+            schemaDicts = populateTableSeqColsForOp("select", schemaDicts,i,j)
+            schemaDicts = populateTableSeqColsForOp("groupby", schemaDicts,i,j)
+            schemaDicts = populateTableSeqColsForOp("orderby", schemaDicts,i,j)
+            schemaDicts = populateTableSeqTimeGranularity("timeoffset",schemaDicts,i,j)
+            schemaDicts = populateTableSeqTimeGranularity("timerange", schemaDicts,i,j)
+            schemaDicts = populateTableSeqTimeGranularity("querygran", schemaDicts,i,j)
+
+    #print len(schemaDicts.forwardMapBitsToOps)
+    #print len(schemaDicts.backwardMapOpsToBits)
+    #print schemaDicts.allOpSize
+    assert len(schemaDicts.forwardMapBitsToOps) == len(schemaDicts.backwardMapOpsToBits)
+    assert len(schemaDicts.forwardMapBitsToOps) == schemaDicts.allOpSize
+    return (schemaDicts.forwardMapBitsToOps, schemaDicts.backwardMapOpsToBits)
+
 def populateBiDirectionalLookupMap(schemaDicts):
-    schemaDicts = populateQueryType(schemaDicts)
+    # schemaDicts = populateQueryType(schemaDicts)
+    schemaDicts = populateQueryTime(schemaDicts)
     schemaDicts = populateTables(schemaDicts)
     schemaDicts = populateColsForOp("project", schemaDicts)
     schemaDicts = populateColsForOp("avg", schemaDicts)
@@ -162,9 +388,14 @@ def populateBiDirectionalLookupMap(schemaDicts):
     schemaDicts = populateColsForOp("select", schemaDicts)
     schemaDicts = populateColsForOp("groupby", schemaDicts)
     schemaDicts = populateColsForOp("orderby", schemaDicts)
-    schemaDicts = populateColsForOp("having", schemaDicts)
-    schemaDicts = populateLimit(schemaDicts)
+    # schemaDicts = populateColsForOp("having", schemaDicts)
+    # schemaDicts = populateLimit(schemaDicts)
     # schemaDicts = populateJoinPreds(schemaDicts)
+
+    schemaDicts = populateTimeGranularity("timeoffset",schemaDicts)
+    schemaDicts = populateTimeGranularity("timerange", schemaDicts)
+    schemaDicts = populateTimeGranularity("querygran", schemaDicts)
+
     #print len(schemaDicts.forwardMapBitsToOps)
     #print len(schemaDicts.backwardMapOpsToBits)
     #print schemaDicts.allOpSize
@@ -287,8 +518,10 @@ def readJoinColDicts(joinPredFile, joinPredBitPosFile):
 def readSchemaDicts(configDict):
     (tableDict, tableOrderDict) = readTableDict(getConfig(configDict['MINC_TABLES']))
     colDict = readColDict(getConfig(configDict['MINC_COLS']))
+    topQueryN=int(configDict['topQueryN'])
+    embeddingType=configDict['embeddingType']
     # (joinPredDict, joinPredBitPosDict) = readJoinColDicts(getConfig(configDict['MINC_JOIN_PREDS']), getConfig(configDict['MINC_JOIN_PRED_BIT_POS']))
-    schemaDicts = SchemaDicts(tableDict, tableOrderDict, colDict, {}, {})
+    schemaDicts = SchemaDicts(tableDict, tableOrderDict, colDict, {}, {},topQueryN,embeddingType)
     return schemaDicts
 
 def topKThres(configDict):
@@ -300,6 +533,8 @@ def topKThres(configDict):
     # special case:
     if int(configDict['TOP_K']) == 3:
         thresholds = [0.8, 0.6, 0.4]
+    if int(configDict['TOP_K']) == 1:
+        thresholds = [0.6]
     return thresholds
 
 def refineIntentForQuery(threadID, topKCandidateVector, schemaDicts, precOrRecallFavor, configDict, curIntentBitVec):

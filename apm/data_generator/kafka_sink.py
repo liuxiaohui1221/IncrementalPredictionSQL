@@ -33,8 +33,8 @@ producer = KafkaProducer(
     value_serializer=lambda v: json.dumps(v).encode('utf-8')
 )
 kafka_topic="request"
-total_batch = 10_000
-base_rate = 100  # 基础速率（条/分钟）
+total_batch = 100_000
+base_rate = 10000  # 基础速率（条/分钟）
 APPSYS_IDS = [f"APPSYS_{i:02d}" for i in range(10)]
 APP_IDS = {sys_id: [f"{sys_id}_APP_{i:03d}" for i in range(50)] for sys_id in APPSYS_IDS}
 SERVICE_IDS = {app_id: [f"{app_id}_SVC_{i:03d}" for i in range(100)] for sys_id in APPSYS_IDS for app_id in
@@ -44,6 +44,7 @@ def generate_ods_request():
     """生成请求明细数据（含时间模式控制）"""
     count=0
     total=0
+    startMs=time.time()
     while count<total_batch:
         count+=1
         # 模拟工作日高峰（9:00-18:00）
@@ -53,11 +54,11 @@ def generate_ods_request():
 
         # 速率调整逻辑
         if is_workday and 9 <= current_hour < 18:
-            rate = random.randint(base_rate, base_rate * 2)  # 工作日高峰
+            rate = random.randint(base_rate, base_rate * 3)  # 工作日高峰
         else:
-            rate = random.randint(base_rate - 10, base_rate + 10)
+            rate = random.randint(int(base_rate/2), base_rate)
         print("已发送条数：",total,"当前速率（条/分钟）：",rate)
-        random_time = generate_timestamp(realtime_percent=0.8, recent_percent=0.2,recent_days=5)
+        random_time = generate_timestamp(realtime_percent=0.80, recent_percent=0.1,recent_days=3)
 
         for _ in range(rate // 60):  # 按秒均匀分布
             sys_id = np.random.choice(APPSYS_IDS, p=[0.3, 0.2, 0.1, 0.1, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05])
@@ -66,7 +67,7 @@ def generate_ods_request():
             # random_time += timedelta(minutes=random.randint(1, 5))
             record = {
                 # "ts":  datetime.now().isoformat(),
-                "ts": datetime.now().isoformat(),
+                "ts": random_time.isoformat(),
                 "appsysid": sys_id,
                 "appid": app_id,
                 "service_type": np.random.choice(["Java", "Go", "Python"], p=[0.6, 0.3, 0.1]),
@@ -78,7 +79,7 @@ def generate_ods_request():
             total+=1
             # print("发送数据:", record)
             time.sleep(60 / rate)  # 控制速率
-
+    print("总耗时：",(time.time()-startMs)/1000,"s")
 
 #
 # 启动数据生成线程

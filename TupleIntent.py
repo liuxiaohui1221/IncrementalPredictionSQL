@@ -24,6 +24,11 @@ def createTupleIntentRep(rowIDs, sessQuery, configDict):
     return (newQuery,resObj)
 
 def appendToFile(outputFile, outputLine):
+    # 获取目录路径
+    dir_name = os.path.dirname(outputFile)
+    # 如果目录路径非空且不存在，则递归创建
+    if dir_name:
+        os.makedirs(dir_name, exist_ok=True)
     with open(outputFile, 'a', encoding='utf-8') as outFile:
         outFile.write(outputLine+"\n")
 

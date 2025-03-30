@@ -16,23 +16,33 @@ The version of the BusTracker dataset we used is available at
 * https://www.dropbox.com/s/umqj1dnc7bhvpcw/BusTracker.zip?dl=0
 
 Pre-created SQL fragment vectors for the BusTracker dataset are available at BusTracker/InputOutput/MincBitFragmentIntentSessions
-## 项目架构说明
-1.执行流程：
-   - 首先，通过[MINC_FragmentIntent.py](MINC_FragmentIntent.py)脚本将MINC或BusTracker数据集转换为SQL片段向量。
-    输入：[BusTracker_FragmentQueries_Keep_configFile.txt](configDir%2FBusTracker_FragmentQueries_Keep_configFile.txt)
-     输入的数据：data/BusTracker/InputOutput/BakOutput/BusTrackerQueryLog_SPLIT_OUT_xxx
-     python MINC_FragmentIntent.py -config configDir/BusTracker_FragmentQueries_Keep_configFile.txt
-     输出：输出的SQL片段向量存储在配置文件参数
-   - BIT_FRAGMENT_INTENT_SESSIONS(data/BusTracker/InputOutput/MincBitFragmentIntentSessions)、
-   - QUERYSESSIONS(data/BusTracker/InputOutput/MincQuerySessions)
-   - CONCURRENT_QUERY_SESSIONS(data/BusTracker/InputOutput/MincConcurrentSessions)、
-   - BIT_FRAGMENT_TABLE_INTENT_SESSIONS(data/BusTracker/InputOutput/MincBitFragmentTableIntentSessions)
-     指定的文件中。
-   - 其次，将上面的输出文件作为输入，sh scripts/runApmNovelRNNSingularity.sh执行 LSTM_RNN_Parallel_selOpConst.py
-# Running the code:
-sh scripts/runBusTrackerNovelRNNSingularity.sh
-sh scripts/runBusTrackerCFCosineSimSingularity.sh
-sh scripts/runBusTrackerQLSingularity.sh
+# 项目架构说明
+## 数据预处理：
+第一步：首先，通过[APM_FragmentIntent.py](apm/APM_FragmentIntent.py)脚本将APM数据集转换为SQL片段向量。
+
+     输入配置：[APM_Table_Realtime_FragmentQueries_Keep_configFile.txt](config/APM_Table_Realtime_FragmentQueries_Keep_configFile.txt)
+     逻辑：将输入sql查询所属会话进行随机shuffle打乱，并按session id分组将sql合并到一起存放到QUERYSESSIONS参数指定目录。
+     核心参数说明：
+     输入：
+        BIT_FRAGMENT_SEQ_SPLIT_NAME_FORMAT: 指定输入查询及其编码文件路径。
+     输出：
+        BIT_FRAGMENT_INTENT_SESSIONS：指定输出将session打乱后的sql及其编码向量文件。
+        CONCURRENT_QUERY_SESSIONS：指定输出将session打乱后的sql文件。
+        BIT_FRAGMENT_TABLE_INTENT_SESSIONS：指定输出将session打乱后的sql及仅仅包含table编码向量文件。
+        QUERYSESSIONS: 指定输出查询会话文件路径。将所有原始sql语句按session id分组到一起后输出到文件中。
+
+     
+`python APM_FragmentIntent.py -config config/APM_Table_Realtime_FragmentQueries_Keep_configFile.txt`
+     
+## 模型训练：
+# 选择对应的训练模型进行训练:
+将上面的输出文件作为下面执行脚本的输入：依然是使用APM_Table_Novel_RNN_singularity_configFile.txt配置文件。
+
+RNN-simple增量训练：`sh scripts/runApmNovelRNNSingularity.sh` 对应执行 LSTM_RNN_Parallel_selOpConst.py
+QLearning增量训练：`sh scripts/runApmQLSingularity.sh` 对应执行 QLearning_selOpConst.py
+
+`sh scripts/runBusTrackerNovelRNNSingularity.sh`
+`sh scripts/runBusTrackerQLSingularity.sh`
 
 ## 按分钟尺度窗口进行query编码和训练
 select：维度，指标，每个指标聚合方式

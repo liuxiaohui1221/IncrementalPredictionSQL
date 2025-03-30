@@ -233,7 +233,7 @@ def predictWeightVector(modelRNNThread, sessionStreamDict, sessID, queryID, max_
     batchSize = min(int(configDict['ACTIVE_BATCH_SIZE']), len(testX))
     predictedY = modelRNNThread.predict(testX, batch_size = batchSize)
     predictedY = predictedY[0][predictedY.shape[1] - 1]
-    #print "Completed prediction: " + str(sessID) + ", queryID: " + str(queryID)
+    print("Completed prediction: " + str(sessID) + ", queryID: " + str(queryID))
     return predictedY
 
 
@@ -378,6 +378,7 @@ def computePredictedIntentsRNN(threadID, predictedY, schemaDicts, configDict, cu
                                               sessionDictCurThread, sampledQueryHistory, sessionStreamDict)
     elif configDict['RNN_PREDICT_NOVEL_QUERIES'] == 'True':
         if configDict['INCLUDE_SEL_OP_CONST'] == 'False':
+            # 预测topK novel queries
             return ReverseEnggQueries.predictTopKNovelIntents(threadID, predictedY, schemaDicts, configDict, sessionStreamDict[str(curSessID)+","+str(curQueryID)])
         else:
             return ReverseEnggQueries_selOpConst.predictTopKNovelIntents(threadID, predictedY, schemaDicts, configDict, sessionStreamDict[str(curSessID)+","+str(curQueryID)])
