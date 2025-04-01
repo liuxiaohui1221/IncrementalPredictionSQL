@@ -115,11 +115,13 @@ def executeMINCQueryWithIntent(sessQuery, configDict, queryVocabulary):
 
 
 def executeQueryWithIntent(sessQuery, configDict, queryVocabulary):
-    assert configDict['DATASET'] == 'NYCTaxitrips' or configDict['DATASET'] == 'MINC' or configDict['DATASET'] == 'BusTracker'
+    # assert configDict['DATASET'] == 'Apm' or configDict['DATASET'] == 'MINC' or configDict['DATASET'] == 'BusTracker'
     if configDict['DATASET'] == 'NYCTaxiTrips':
         return executeNYCQueryWithIntent(sessQuery, configDict, queryVocabulary)
-    elif configDict['DATASET'] == 'MINC' or configDict['DATASET'] == 'BusTracker':
+    elif configDict['DATASET'] == 'Apm' or configDict['DATASET'] == 'BusTracker':
         return executeMINCQueryWithIntent(sessQuery, configDict, queryVocabulary)
+    else:
+        print("Dataset not supported execute query with intent")
 
 if __name__ == "__main__":
     configDict = parseConfig.parseConfigFile("configFile.txt")

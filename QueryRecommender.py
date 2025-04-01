@@ -228,10 +228,6 @@ def readFromPickleFile(fileName):
         readObj = pickle.load(handle)
     return readObj
 
-def writeToPickleFile(fileName, writeObj):
-    with open(fileName, 'wb') as handle:
-        pickle.dump(writeObj, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
 def computeBitFMeasure(actualQueryIntent, topKQueryIntent):
     # 断言actualQueryIntent和topKQueryIntent的大小相等
     assert actualQueryIntent.size() == topKQueryIntent.size()
@@ -275,6 +271,10 @@ def computeBitFMeasure(actualQueryIntent, topKQueryIntent):
     accuracy = float(TP+TN)/float(TP+FP+TN+FN)
     # 返回precision、recall、FMeasure和accuracy
     return (precision, recall, FMeasure, accuracy)
+
+def writeToPickleFile(fileName, writeObj):
+    with open(fileName, 'wb') as handle:
+        pickle.dump(writeObj, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 def computeWeightedFMeasure(actualQueryIntent, topKQueryIntent, delimiter, configDict):
     groundTruthDims = actualQueryIntent.split(delimiter)
@@ -545,6 +545,7 @@ def evaluateTimePredictions(episodeResponseTimeDictName, configDict, algoName):
         len(episodeIntentCreationTime)) + ", len(episodeResponseTime) = " + str(len(episodeResponseTime)))
     minLen = min(len(episodeQueryExecutionTime), len(episodeIntentCreationTime), len(episodeResponseTime))
   #  assert len(episodeQueryExecutionTime) == len(episodeResponseTime) and len(episodeIntentCreationTime) == len(episodeResponseTime)
+    outputEvalTimeStr=''
     for episodes in episodeResponseTime:
         if episodes >= minLen:
             continue

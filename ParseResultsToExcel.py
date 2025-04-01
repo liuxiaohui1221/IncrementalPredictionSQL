@@ -197,6 +197,8 @@ def parseTimeFile(fileName, outputExcel):
     intentCreate = []
     intentPredict = []
     responseTime = []
+    if os.path.exists(fileName)==False:
+        return
     with open(fileName) as f:
         for line in f:
             tokens = line.split(";")

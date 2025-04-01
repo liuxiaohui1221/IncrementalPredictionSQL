@@ -34,17 +34,17 @@ metric_registry = {
 
 # Prometheus 指标类型映射（根据Druid指标名称前缀自动识别）
 METRIC_TYPE_MAPPING = {
-    # 'query/time': Histogram,
-    'query/count': Counter,
-    # 'jvm/mem/used': Gauge,
-    'jvm/gc/time': Counter,
+    'query/time': Gauge,
+    'query/count': Gauge,
+    'jvm/mem/used': Gauge,
+    'jvm/gc/time': Gauge,
     'segment/used': Gauge,
     # 可扩展更多映射规则
 }
 
 ALL_METRICS = list(METRIC_TYPE_MAPPING.keys())
 ALL_METRICS = ALL_METRICS + ['query/time','query/cpu/time','jvm/mem/used','jvm/gc/mem/used',
-                             '/materialized/view/query/hitRate',
+                             '/materialized/view/query/hitRate','ingest/events/processed','ingest/events/processedWithError'
                                             'ingestion/kafka/consumer/recordsConsumed','ingest/kafka/partitionLag']
 # 单位转换映射（将Druid单位转为Prometheus标准单位）
 UNIT_CONVERSION = {
@@ -94,6 +94,11 @@ def get_or_create_metric(metric_name, metric_type, labels, help_text='', **kwarg
 
     # 缓存指标
     metric_registry[registry_key][metric_name][labels_key] = metric
+    # 注册指标
+    try:
+        REGISTRY.register(metric);
+    except ValueError as e:
+        pass
     return metric
 
 
@@ -101,7 +106,7 @@ def parse_druid_metric(event):
     """解析Druid指标事件，返回标准化结构"""
     metric_name = event.get('metric', '')
     if(metric_name not in ALL_METRICS):
-        logger.warning(f"Unknown metric: {metric_name}")
+        # logger.warning(f"Unknown metric: {metric_name}")
         return None
     value = event.get('value', 0)
     dimensions = {k: v for k, v in event.items() if k not in ['metric', 'value', 'timestamp']}
@@ -124,7 +129,7 @@ def parse_druid_metric(event):
         metric_name,
         Gauge if isinstance(value, (int, float)) else Counter  # 默认推断
     )
-    print("metricName:",metric_name,"value:",converted_value)
+    print("metricName:",metric_name,"newMetricName:",prom_metric_name,"value:",converted_value,'labels', dimensions)
     return {
         'name': prom_metric_name,
         'type': metric_type,
@@ -169,8 +174,10 @@ def handle_druid_metrics():
 @app.route('/metrics')
 def prometheus_metrics():
     """暴露Prometheus指标端点"""
+    report_metrics_data = generate_latest(REGISTRY)
+    print("Report metrics:",report_metrics_data)
     return Response(
-        generate_latest(REGISTRY),
+        report_metrics_data,
         mimetype=CONTENT_TYPE_LATEST
     )
 
@@ -186,5 +193,5 @@ if __name__ == '__main__':
     # 启动Prometheus指标服务器（默认端口8000）
     start_http_server(8000)
 
-    # 启动Flask应用（接收端口9091）
-    app.run(host='0.0.0.0', port=9091, threaded=True)
+    # 启动Flask应用（接收端口19091）
+    app.run(host='0.0.0.0', port=19091, threaded=True)
