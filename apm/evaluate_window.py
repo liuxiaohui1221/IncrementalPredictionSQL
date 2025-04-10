@@ -236,8 +236,13 @@ def computeBitFMeasure(actualQueryIntent, topKQueryIntent):
     FP=0
     TN=0
     FN=0
+    hit=-1
     # 遍历actualQueryIntent和topKQueryIntent的每一个元素
     for pos in range(actualQueryIntent.size()):
+        # 统计是否命中
+        if actualQueryIntent.test(pos):
+            if not topKQueryIntent.test(pos):
+                hit=0  # 未命中
         # 如果actualQueryIntent和topKQueryIntent的元素都为真，则TP+1
         if actualQueryIntent.test(pos) and topKQueryIntent.test(pos):
             TP+=1
@@ -250,6 +255,8 @@ def computeBitFMeasure(actualQueryIntent, topKQueryIntent):
         # 如果actualQueryIntent的元素为假，topKQueryIntent的元素为真，则FP+1
         elif not actualQueryIntent.test(pos) and topKQueryIntent.test(pos):
             FP+=1
+    if hit==-1:
+        hit=1 # 命中
     # 如果TP和FP都为0，则precision为0.0
     if TP == 0 and FP == 0:
         precision = 0.0
@@ -271,7 +278,7 @@ def computeBitFMeasure(actualQueryIntent, topKQueryIntent):
     # accuracy为(TP+TN)/(TP+FP+TN+FN)
     accuracy = float(TP+TN)/float(TP+FP+TN+FN)
     # 返回precision、recall、FMeasure和accuracy
-    return (precision, recall, FMeasure, accuracy)
+    return (precision, recall, FMeasure, accuracy,hit)
 
 def writeToPickleFile(fileName, writeObj):
     with open(fileName, 'wb') as handle:
@@ -318,6 +325,7 @@ def computeQueRIEFMeasureForEachEpisode(line, configDict):
     recallAtMaxFMeasure = 0.0
     maxFMeasure = 0.0
     accuracyAtMaxFMeasure = 0.0
+    hitMeasure = 0
     maxFIndex = -1
     if configDict['BIT_OR_WEIGHTED'] == 'BIT':
         actualQueryIntent = BitMap.fromstring(tokens[3].split(":")[1])
@@ -326,7 +334,7 @@ def computeQueRIEFMeasureForEachEpisode(line, configDict):
     for i in range(4, len(tokens)):#从4位置开始取出预测的topK个query intent
         if configDict['BIT_OR_WEIGHTED'] == 'BIT':
             topKQueryIntent = BitMap.fromstring(tokens[i].split(":")[1])
-            (precision, recall, FMeasure, accuracy) = computeBitFMeasure(actualQueryIntent, topKQueryIntent)
+            (precision, recall, FMeasure, accuracy, hit) = computeBitFMeasure(actualQueryIntent, topKQueryIntent)
         elif configDict['BIT_OR_WEIGHTED'] == 'WEIGHTED':
             topKQueryIntent = tokens[i].split(":")[1]
             (precision, recall, FMeasure, accuracy) = computeWeightedFMeasure(actualQueryIntent, topKQueryIntent, ",",
@@ -336,12 +344,13 @@ def computeQueRIEFMeasureForEachEpisode(line, configDict):
             precisionAtMaxFMeasure = precision
             recallAtMaxFMeasure = recall
             accuracyAtMaxFMeasure = accuracy
+            hitMeasure = hit
             maxFIndex = i-4 # gives the topKIndex
         #if precision > maxPrecision:
         #if recall > maxRecall:
         #if accuracy > maxAccuracy:
     # print "float(len(tokens)-4 ="+str(len(tokens)-4)+", precision = "+str(precision/float(len(tokens)-4))
-    return (sessID, queryID, numEpisodes, accuracyAtMaxFMeasure, precisionAtMaxFMeasure, recallAtMaxFMeasure, maxFMeasure, maxFIndex)
+    return (sessID, queryID, numEpisodes, accuracyAtMaxFMeasure, precisionAtMaxFMeasure, recallAtMaxFMeasure, maxFMeasure, maxFIndex, hitMeasure)
 
 def computeCosineSimFMeasureForEachEpisode(line, configDict):
     tokens = line.strip().split(";")
@@ -383,8 +392,8 @@ def computeAccuracyForEachEpisode(line, configDict):
     if configDict['COSINESIM_OR_QUERIE_FMEASURE'] == 'COSINESIM':
         (sessID, queryID, numEpisodes, accuracy, precision, recall, FMeasure) = computeCosineSimFMeasureForEachEpisode(line, configDict)
     elif configDict['COSINESIM_OR_QUERIE_FMEASURE'] == 'QUERIE':
-        (sessID, queryID, numEpisodes, accuracy, precision, recall, FMeasure, maxFIndex) = computeQueRIEFMeasureForEachEpisode(line, configDict)
-    return (sessID, queryID, numEpisodes, accuracy, precision, recall, FMeasure, maxFIndex)
+        (sessID, queryID, numEpisodes, accuracy, precision, recall, FMeasure, maxFIndex, hitMeasure) = computeQueRIEFMeasureForEachEpisode(line, configDict)
+    return (sessID, queryID, numEpisodes, accuracy, precision, recall, FMeasure, maxFIndex,hitMeasure)
 
 def appendToDict(avgDict, key, value):
     if key not in avgDict:
@@ -406,7 +415,7 @@ def computeAvgFoldAccuracy(kFoldOutputIntentFiles, configDict):
     for foldOutputIntentFile in kFoldOutputIntentFiles:
         with open(foldOutputIntentFile,encoding='utf-8') as f:
             for line in f:
-                (sessID, queryID, numEpisodes, accuracy, precision, recall, FMeasure, maxFIndex) = computeAccuracyForEachEpisode(line, configDict)
+                (sessID, queryID, numEpisodes, accuracy, precision, recall, FMeasure, maxFIndex,hitMeasure) = computeAccuracyForEachEpisode(line, configDict)
                 avgMaxAccuracy = appendToDict(avgMaxAccuracy, numEpisodes, accuracy)
                 avgPrecision = appendToDict(avgPrecision, numEpisodes, precision)
                 avgRecall = appendToDict(avgRecall, numEpisodes, recall)
@@ -444,16 +453,21 @@ def evaluateQualityPredictions(outputIntentFileName, configDict, accThres, algoN
         os.remove(outputEvalQualityFileName)
     except OSError:
         pass
+    batch_count=0
+    hit_count=0
     with open(outputIntentFileName,encoding='utf-8') as f:
         for line in f:
             # 评估性能
-            (sessID, queryID, numEpisodes, accuracy, precision, recall, FMeasure, maxFIndex) = computeAccuracyForEachEpisode(line,
+            (sessID, queryID, numEpisodes, accuracy, precision, recall, FMeasure, maxFIndex, hitMeasure) = computeAccuracyForEachEpisode(line,
                                                                                                         configDict)
             outputEvalQualityStr = "Session:" + str(sessID) + ";Query:" + str(queryID) + ";#Episodes:" + str(
                 numEpisodes) + ";Precision:" + str(precision) + ";Recall:" + str(recall) + ";FMeasure:" + str(FMeasure) +";Accuracy:" + str(
                 accuracy)+";MaxFIndex:"+str(maxFIndex)
+            batch_count+=1
+            hit_count+=hitMeasure
             ti.appendToFile(outputEvalQualityFileName, outputEvalQualityStr)
-
+    print("Hit Rate:", hit_count/batch_count, "Batch Count:", batch_count)
+    ti.appendToFile(outputEvalQualityFileName+"_hit", "Hit Rate:"+str(hit_count/batch_count)+";Batch Count:"+str(batch_count))
 def avgKFoldTimeAndQualityPlots(kFoldOutputIntentFiles,kFoldEpisodeResponseTimeDicts, avgTrainTimeFN, avgTestTimeFN, algoName, configDict):
     avgTrainTime = readFromPickleFile(avgTrainTimeFN)
     avgTestTime = readFromPickleFile(avgTestTimeFN)

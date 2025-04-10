@@ -534,7 +534,7 @@ def topKThres(configDict):
     if int(configDict['TOP_K']) == 3:
         thresholds = [0.8, 0.6, 0.4]
     if int(configDict['TOP_K']) == 1:
-        thresholds = [0.6]
+        thresholds = [float(configDict['ACCURACY_THRESHOLD'])]
     return thresholds
 
 def refineIntentForQuery(threadID, topKCandidateVector, schemaDicts, precOrRecallFavor, configDict, curIntentBitVec):

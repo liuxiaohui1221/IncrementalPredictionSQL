@@ -94,6 +94,8 @@ def updateRNNIncrementalTrain(modelRNN, max_lookback, x_train, y_train, configDi
     y_train = np.array(y_train)
     batchSize = min(len(x_train), int(configDict['RNN_BATCH_SIZE']))
     print("shape of x_train,y_train is ", x_train.shape,y_train.shape)
+    from tensorflow.keras.utils import plot_model
+    plot_model(modelRNN, to_file='rnn_simple_model.png', show_shapes=True, show_layer_names=True)
     modelRNN.fit(x_train, y_train, epochs=int(configDict['RNN_FULL_TRAIN_EPOCHS']), batch_size=batchSize)
     # trainMyRNN(x_train, y_train, epochs=int(configDict['RNN_FULL_TRAIN_EPOCHS']))
     if max_lookback_this > max_lookback:
@@ -590,7 +592,6 @@ def appendResultsToFile(resultDict, elapsedAppendTime, numEpisodes, outputIntent
     return elapsedAppendTime
 
 def updateTimeResultsToExcel(configDict, episodeResponseTimeDictName, outputIntentFileName,split_i):
-    accThres = float(configDict['ACCURACY_THRESHOLD'])
 
     eval.evaluateTimePredictions(episodeResponseTimeDictName, configDict,
                                configDict['ALGORITHM'] + "_" + configDict["RNN_BACKPROP_LSTM_GRU"],split_i)
@@ -630,7 +631,8 @@ def updateQualityResultsToExcel(configDict, episodeResponseTimeDictName, outputI
     return
 
 
-def updateResultsToExcel(configDict, episodeResponseTimeDictName, outputIntentFileName,split_i,episodes,precision,recall,FMeasure,accuracy,numQueries):
+def updateResultsToExcel(configDict, episodeResponseTimeDictName, outputIntentFileName,split_i,episodes,precision,
+                         recall,FMeasure,accuracy,numQueries,hitRate,hitBatch):
     accThres = float(configDict['ACCURACY_THRESHOLD'])
 
     print("output intent filename:",outputIntentFileName)
@@ -641,7 +643,8 @@ def updateResultsToExcel(configDict, episodeResponseTimeDictName, outputIntentFi
                                     'BIT_OR_WEIGHTED'] + "_TOP_K_" + configDict['TOP_K'] + "_EPISODE_IN_QUERIES_" + \
                                 configDict['EPISODE_IN_QUERIES'] + "_ACCURACY_THRESHOLD_" + str(accThres)
 
-    parseQualityFileWithEpisodeRep(outputEvalQualityFileName, configDict,episodes,precision,recall,FMeasure,accuracy,numQueries)
+    parseQualityFileWithEpisodeRep(outputEvalQualityFileName, configDict,episodes,precision,recall,FMeasure,accuracy,
+                                   numQueries,hitRate,hitBatch)
     print("--Completed Quality Evaluation for accThres:" + str(accThres))
 
     eval.evaluateTimePredictions(episodeResponseTimeDictName, configDict,
@@ -659,7 +662,8 @@ def updateResultsToExcel(configDict, episodeResponseTimeDictName, outputIntentFi
 
     print("--Completed Quality and Time Evaluation--")
     return
-def parseQualityFileWithEpisodeRep(fileName, configDict,episodes,precision,recall,FMeasure,accuracy,numQueries):
+def parseQualityFileWithEpisodeRep(fileName, configDict,episodes,precision,recall,FMeasure,accuracy,numQueries,
+                                   hitRate,hitBatch):
 
     precisionPerEpisode = 0.0
     recallPerEpisode = 0.0
@@ -673,6 +677,13 @@ def parseQualityFileWithEpisodeRep(fileName, configDict,episodes,precision,recal
         episodeIndex = 2
     elif configDict['SINGULARITY_OR_KFOLD'] == 'KFOLD':
         episodeIndex = 0
+    with (open(fileName+"_hit") as f):
+        for line in f:
+            tokens = line.split(";")
+            hitRatePerBatch=float(tokens[0].split(":")[1])
+            hitRate.append(hitRatePerBatch)
+            batch_couunt=int(tokens[1].split(":")[1])
+            hitBatch.append(batch_couunt)
     with (open(fileName) as f):
         for line in f:
             tokens = line.split(";")
@@ -873,6 +884,8 @@ def trainTestBatchWise(keyOrders, schemaDicts, sampledQueryHistory, queryKeysSet
     recall = []
     FMeasure = []
     accuracy = []
+    hitRate =[]
+    hitBatch=[]
     numQueries = []
     accThres = float(configDict['ACCURACY_THRESHOLD'])
     outputExcel = getConfig(configDict['OUTPUT_DIR']) + "/OutputExcelQuality_" + configDict['ALGORITHM'] + "_" + \
@@ -880,14 +893,21 @@ def trainTestBatchWise(keyOrders, schemaDicts, sampledQueryHistory, queryKeysSet
                              'BIT_OR_WEIGHTED'] + "_TOP_K_" + configDict['TOP_K'] + "_all_windows_" + configDict[
                              'EPISODE_IN_QUERIES'] + "_ACCURACY_THRESHOLD_" + str(accThres) + "_" + configDict[
                              'RNN_INCREMENTAL_OR_FULL_TRAIN'] + ".xlsx"
+    outputHitExcel = getConfig(configDict['OUTPUT_DIR']) + "/OutputExcelQuality_" + configDict['ALGORITHM'] + "_" + \
+                  configDict["RNN_BACKPROP_LSTM_GRU"] + "_" + configDict['INTENT_REP'] + "_" + configDict[
+                      'BIT_OR_WEIGHTED'] + "_TOP_K_" + configDict['TOP_K'] + "_all_windows_" + configDict[
+                      'EPISODE_IN_QUERIES'] + "_ACCURACY_THRESHOLD_" + str(accThres) + "_hitRate_" + ".xlsx"
     for episodeResponseTimeDictName,outputIntentFileName in zip(episodeResponseTimeDictNames, outputIntentFileNames):
         updateResultsToExcel(configDict, episodeResponseTimeDictName, outputIntentFileName,type + "_" + str(i + 1),
-                             episodes,precision,recall,FMeasure,accuracy,numQueries)
+                             episodes,precision,recall,FMeasure,accuracy,numQueries,hitRate,hitBatch)
         i += 1
     df = DataFrame(
         {'episodes': episodes, 'precision': precision,
          'recall': recall, 'FMeasure': FMeasure, 'accuracy': accuracy})
+    df2 = DataFrame(
+        {'hitBatch': hitBatch,'hitRate': hitRate})
     df.to_excel(outputExcel, sheet_name='sheet1', index=False)
+    df2.to_excel(outputHitExcel, sheet_name='sheet1', index=False)
 def checkResultDictNotEmpty(resultDict):
     for threadID in resultDict:
         if len(resultDict[threadID]) > 0:
@@ -1104,7 +1124,7 @@ def runFromExistingOutputInBetween(configDict,split_i):
 
 if __name__ == "__main__":
     # -config config_bak/BusTracker_Novel_RNN_singularity_configFile.txt
-    configDict = parseConfig.parseConfigFile("../config/window/APM_Window_Novel_RNN_singularity_configFile.txt")
+    configDict = parseConfig.parseConfigFile("../config/window/APM_Window_Novel_RNN_singularity_configFile2.txt")
     # parser = argparse.ArgumentParser()
     # parser.add_argument("-config", help="Config parameters file", type=str, required=True)
     # args = parser.parse_args()
