@@ -15,7 +15,7 @@ def set_font():
     """配置中英文字体参数"""
     # 英文设置
     rcParams['font.family'] = 'Times New Roman'
-    rcParams['font.size'] = 5  # 统一字号
+    rcParams['font.size'] = 12  # 统一字号
 
     # 中文设置
     try:
@@ -26,7 +26,7 @@ def set_font():
         print("警告：中文字体配置失败，请手动指定字体路径")
 
 
-def plot_curve(file_path, x_col, y_col):
+def plot_curve(file_path, x_col, y_col, title="曲线图"):
     """绘制曲线图核心函数"""
     # 读取数据
     df = pd.read_excel(file_path, engine='openpyxl')
@@ -53,7 +53,8 @@ def plot_curve(file_path, x_col, y_col):
             markersize=3,
             markeredgecolor='black',
             markerfacecolor='white')
-
+    # 设置标题
+    ax.set_title(f"{title}", fontproperties='SimSun', fontsize=12)  # 中文用宋体
     # 设置坐标轴
     ax.set_xlabel(x_col, fontproperties='SimSun')  # 中文用宋体
     ax.set_ylabel(y_col, fontproperties='SimSun')
@@ -64,7 +65,8 @@ def plot_curve(file_path, x_col, y_col):
 
     # 调整布局
     plt.tight_layout(pad=1.5)  # 增加边距
-
+    plt.xticks(fontsize=10.5)  # 刻度字体‌:ml-citation{ref="1,2" data="citationList"}
+    plt.yticks(fontsize=10.5)
     # 显示图表
     plt.show()
 
