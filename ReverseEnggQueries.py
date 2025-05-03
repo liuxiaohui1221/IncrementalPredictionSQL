@@ -1,28 +1,10 @@
 from __future__ import division
-import sys, operator
-import os
-import time
 import QueryRecommender as QR
 from bitmap import BitMap
-import math
-import heapq
-import TupleIntent as ti
 import ParseConfigFile as parseConfig
-import ParseResultsToExcel
-import ConcurrentSessions
-import numpy as np
-import pandas as pd
-from numpy import dot
-from numpy.linalg import norm
-import matplotlib.pyplot as plt
-import CFCosineSim
 import argparse
 from ParseConfigFile import getConfig
-import threading
-import copy
 import multiprocessing
-from multiprocessing.pool import ThreadPool
-from multiprocessing import Array
 import CreateSQLFromIntentVec
 
 class SchemaDicts:
@@ -51,12 +33,16 @@ class SchemaDicts:
         # the following requires careful order mapping
         self.queryTypeStartBitIndex = 0
         # self.tableStartBitIndex = self.queryTypeStartBitIndex + self.queryTypeBitMapSize
+        originSize = self.tableBitMapSize + self.tableBitMapSize* topQueryN *(self.queryTimeBitMapSize +
+                                                                             self.allColumnsSize * 8
+                                                                              +self.granBitMapSize * 3)
 
+        # initStartIndex = round_to_eight_diff(originSize)
         if embeddingType=="table":
-            self.tableStartBitIndex=0
+            self.tableStartBitIndex = 0
             self.topQueryIntents = [[0 for _ in range(self.topQueryN)] for _ in range(self.tableBitMapSize)]
             curStartQueryIndex=0
-            initTableLevelStartIndex = self.tableBitMapSize
+            initTableLevelStartIndex = self.tableStartBitIndex + self.tableBitMapSize
             for i in range(0,self.tableBitMapSize):
                 for j in range(0,self.topQueryN):
                     curStartQueryIndex= initTableLevelStartIndex + j*(self.queryTimeBitMapSize +
@@ -124,6 +110,7 @@ class SchemaDicts:
         print("allColumnsSize: ", self.allColumnsSize)
         print("limitBitMapSize: ", self.limitBitMapSize)
         # + self.joinPredicatesBitMapSize)
+
 
 
 def populateQueryType(schemaDicts):
@@ -473,8 +460,9 @@ def readColDict(fn):
         for line in f:
             tokens = line.strip().split(":")
             key = tokens[0]
-            val = tokens[1].replace("[","").replace("]","").replace("'","")
-            columns = val.split(", ")
+            val = tokens[1].replace("[","").replace("]","").replace("'","").replace(" ","")
+            columns = val.split(",")
+            columns.sort()
             colDict[key] = columns
     return colDict
 
@@ -567,7 +555,9 @@ def predictTopKNovelIntentsSingleThread(threadID, predictedY, schemaDicts, confi
     #schemaDicts = readSchemaDicts(configDict)
     thresholds = topKThres(configDict)
     precOrRecallFavor = configDict['RNN_PREC_OR_RECALL_FAVOR']
+    schemaDicts.embeddingType = 'single'
     for threshold in thresholds:
+        # 标准化，将预测向量转为one-hot编码
         topKCandidateVector = employWeightThreshold(predictedY, schemaDicts, threshold)
         if int(configDict['TOP_K']) == 3 and threshold == 0.8:
             precOrRecallFavor = "recall"

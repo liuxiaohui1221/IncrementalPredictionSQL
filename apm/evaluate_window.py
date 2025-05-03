@@ -92,7 +92,8 @@ def retrieveSessIDQueryIDIntent(line, configDict):
     curQueryIntent = ';'.join(strQueryIntent) # actual query intent
     # print("before queryintent length:", len(curQueryIntent))
     if ";" not in curQueryIntent and configDict['BIT_OR_WEIGHTED'] == 'BIT':
-        curQueryIntent = BitMap.fromstring(curQueryIntent.strip())
+        curStrip = curQueryIntent.strip()
+        curQueryIntent = BitMap.fromstring(curStrip)
         # print("curqueryintent length: ", curQueryIntent.size())
     else:
         curQueryIntent = normalizeWeightedVector(curQueryIntent)

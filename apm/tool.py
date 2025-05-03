@@ -87,7 +87,7 @@ fields = [
           'frustrated','exception','err_4xx', 'err_5xx'
     ]
 # # 生成Druid任务的JSON指标格式
-# druid_metrics = generate_druid_metrics(fields)
-# # 打印输出
-# import json
-# print(json.dumps(druid_metrics, indent=4))
+druid_metrics = generate_druid_metrics(fields)
+# 打印输出
+import json
+print(json.dumps(druid_metrics, indent=4))

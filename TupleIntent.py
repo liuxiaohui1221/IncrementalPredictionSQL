@@ -1,6 +1,4 @@
-import sys
 import os
-import time, argparse
 from bitmap import BitMap
 import ParseConfigFile as parseConfig
 from ParseConfigFile import getConfig

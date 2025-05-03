@@ -47,7 +47,7 @@ def parse_log_line(line: str) -> Dict[str, Any]:
         'code', 'is_model', 'exception', 'biz', 'fail', 'httperr', 'neterr',
         'err', 'tolerated', 'frustrated', 'dur'
     ]
-    appid_values=get_field_all_values(500,'appid_',val_lenth=50)
+    appid_values=get_field_all_values(50,'appid_',val_lenth=50)
     appsysid_values = get_field_all_values(100, 'appsysid_',val_lenth=20)
     result = {}
     for field in all_fields:
@@ -76,10 +76,10 @@ def main():
     args = parser.parse_args()
     # Kafka配置
     producer = KafkaProducer(
-        bootstrap_servers=['192.168.86.9:9092'],
+        bootstrap_servers=['localhost:9092'],
         value_serializer=lambda v: json.dumps(v).encode('utf-8')
     )
-    kafka_topic="dwm_request"
+    kafka_topic="dwm_request_src"
     total,rate=0,0.001
     with open(args.input_file, 'r') as file:
         for line in file:

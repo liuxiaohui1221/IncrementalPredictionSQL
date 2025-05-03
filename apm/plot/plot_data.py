@@ -74,7 +74,7 @@ def plot_curve(file_path, x_col, y_col, output_file):
 if __name__ == "__main__":
     # 配置命令行参数
     parser = argparse.ArgumentParser(description='学术图表生成器')
-    parser.add_argument('file', type=str, default='/home/xhh/db_workspace/IntentPredictionEval/apm/plot/5minute_1table_RNN_F1.xlsx', help='输入文件路径')
+    parser.add_argument('file', type=str, default='/home/xhh/db_workspace/IncrementalPredictionSQL/apm/plot/5minute_1table_RNN_F1.xlsx', help='输入文件路径')
     parser.add_argument('--x', type=str, default="迭代",required=True, help='X轴列名')
     parser.add_argument('--y', type=str, default="F1得分",required=True, help='Y轴列名')
     parser.add_argument('--output', type=str, default='5minute_1table_RNN_F1.tif', help='输出文件名')

@@ -6,7 +6,7 @@ import time
 from keras.utils import pad_sequences
 from pandas import DataFrame
 
-import evaluate_window as eval
+import apm.evaluate_window as eval
 from bitmap import BitMap
 import math
 import heapq
@@ -95,7 +95,20 @@ def updateRNNIncrementalTrain(modelRNN, max_lookback, x_train, y_train, configDi
     batchSize = min(len(x_train), int(configDict['RNN_BATCH_SIZE']))
     print("shape of x_train,y_train is ", x_train.shape,y_train.shape)
     from tensorflow.keras.utils import plot_model
-    plot_model(modelRNN, to_file='rnn_simple_model.png', show_shapes=True, show_layer_names=True)
+    # plot_model(modelRNN, to_file=f"{configDict['RNN_BACKPROP_LSTM_GRU']}_model.svg", show_shapes=True, show_layer_names=True)
+    from tensorflow.keras.utils import model_to_dot
+    import pydot
+    # 生成DOT对象
+    dot = model_to_dot(
+        modelRNN,
+        show_shapes=True,
+        dpi=300,  # 控制内部元素生成精度
+        layer_range=None  # 包含所有层
+    )
+    # 将DOT对象渲染为PNG字节流
+    pydot.graph_from_dot_data(dot.to_string())[0].write_png(f"{configDict['RNN_BACKPROP_LSTM_GRU']}_model.png")
+    print("Saved png!")
+
     modelRNN.fit(x_train, y_train, epochs=int(configDict['RNN_FULL_TRAIN_EPOCHS']), batch_size=batchSize)
     # trainMyRNN(x_train, y_train, epochs=int(configDict['RNN_FULL_TRAIN_EPOCHS']))
     if max_lookback_this > max_lookback:
@@ -781,7 +794,7 @@ def updateSampledQueryHistory(configDict, sampledQueryHistory, queryKeysSetAside
 def saveModel(modelRNN, sessionDictGlobal, sampledQueryHistory, max_lookback, configDict,split_i):
     modelRNNFileName = getConfig(configDict['OUTPUT_DIR'])+'/model_'+ configDict[
         'ALGORITHM'] + "_" + configDict["RNN_BACKPROP_LSTM_GRU"] + "_" + configDict['INTENT_REP'] + "_" + configDict[
-                                 'BIT_OR_WEIGHTED'] + "_TOP_K_" + configDict['TOP_K'] + split_i + \
+                                 'BIT_OR_WEIGHTED'] + "_TOP_K_" + configDict['TOP_K'] + \
                              configDict['EPISODE_IN_QUERIES'] +'.h5'
     modelRNN.save(modelRNNFileName, overwrite=True)
     sessionDictGlobalFileName = getConfig(configDict['OUTPUT_DIR']) + "/sessionDictGlobal_" + configDict[
@@ -860,6 +873,7 @@ def trainTestBatchWise(keyOrders, schemaDicts, sampledQueryHistory, queryKeysSet
             # batch训练
             (modelRNN, sessionDictGlobal, max_lookback) = refineTemporalPredictor(queryKeysSetAside, configDict, sessionDictGlobal,
                                                                             modelRNN, max_lookback, sessionStreamDict)
+            # save the model
             if modelRNN is not None:
                 saveModel(modelRNN, sessionDictGlobal, sampledQueryHistory, max_lookback, configDict,
                           type+"_"+str(index+1))
@@ -1124,7 +1138,7 @@ def runFromExistingOutputInBetween(configDict,split_i):
 
 if __name__ == "__main__":
     # -config config_bak/BusTracker_Novel_RNN_singularity_configFile.txt
-    configDict = parseConfig.parseConfigFile("../config/window/APM_Window_Novel_RNN_singularity_configFile2.txt")
+    configDict = parseConfig.parseConfigFile("../config/window/APM_Window_Novel_RNN_singularity_configFile.txt")
     # parser = argparse.ArgumentParser()
     # parser.add_argument("-config", help="Config parameters file", type=str, required=True)
     # args = parser.parse_args()

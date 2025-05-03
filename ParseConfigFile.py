@@ -18,7 +18,7 @@ def getConfig(relativePath):
     # absPath = homeDir+"/"+relativePath
     baseDir = "/data/lxhdata/IncrementalPredictionSQL"
     if "output/" in relativePath:
-        absPath = os.path.join(os.path.dirname(baseDir, relativePath))
+        absPath = os.path.join(baseDir, relativePath)
     else:
         absPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), relativePath)
     return absPath

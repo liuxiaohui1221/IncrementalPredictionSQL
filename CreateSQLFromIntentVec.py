@@ -1,28 +1,11 @@
 from __future__ import division
-import sys, operator
-import os
-import time
-import QueryRecommender as QR
-from bitmap import BitMap
-import math
-import heapq
-import TupleIntent as ti
-import ParseConfigFile as parseConfig
-import ParseResultsToExcel
-import ConcurrentSessions
+
+from copy import copy, deepcopy
+
 import numpy as np
-import pandas as pd
-from numpy import dot
-from numpy.linalg import norm
-import matplotlib.pyplot as plt
-import CFCosineSim
+from bitmap import BitMap
+import ParseConfigFile as parseConfig
 import argparse
-from ParseConfigFile import getConfig
-import threading
-import copy
-import multiprocessing
-from multiprocessing.pool import ThreadPool
-from multiprocessing import Array
 import ReverseEnggQueries
 import socket
 
@@ -36,7 +19,7 @@ class SQLForBitMapIntent:
         # 存储新设置的位位置列表
         self.newSetBitPosList = newSetBitPosList
         # 存储查询类型
-        self.queryType = None
+        # self.queryType = None
         # 查询事件时间离散特征：周期，小时
         self.queryTime = None
         # 存储表名
@@ -233,34 +216,60 @@ def createSQLStringForTable(intentObj):
     return actualSQLStr
 
 def createSQLString(intentObj):
-    actualSQLStr = "Query Type: "+str(intentObj.queryType)+"\n"
+    actualSQLStr = "----Query ops----:\n"
+    sqlOpsDict = {}
+    if intentObj.queryTime is not None:
+        actualSQLStr += "Query Time: "+str(intentObj.queryTime)+"\n"
+        sqlOpsDict["queryTime"] = intentObj.queryTime
+    if intentObj.timeOffset is not None:
+        actualSQLStr += "Time Offset: "+str(intentObj.timeOffset)+"\n"
+        sqlOpsDict["timeOffset"] = intentObj.timeOffset
+    if intentObj.timeRange is not None:
+        actualSQLStr += "Time Range: "+str(intentObj.timeRange)+"\n"
+        sqlOpsDict["timeRange"] = intentObj.timeRange
+    if intentObj.queryGran is not None:
+        actualSQLStr += "Query Granularity: "+str(intentObj.queryGran)+"\n"
+        sqlOpsDict["queryGranularity"] = intentObj.queryGran
     if intentObj.tables is not None and len(intentObj.tables) > 0:
         actualSQLStr += "Tables: "+str(intentObj.tables) + "\n"
+        sqlOpsDict["tables"] = intentObj.tables
     if intentObj.projCols is not None and len(intentObj.projCols) > 0:
         actualSQLStr += "Projected Columns: " + str(intentObj.projCols) + "\n"
+        sqlOpsDict["projCols"] = intentObj.projCols
     if intentObj.avgCols is not None and len(intentObj.avgCols) > 0:
         actualSQLStr += "AVG Columns: " + str(intentObj.avgCols) + "\n"
+        sqlOpsDict["avgCols"] = intentObj.avgCols
     if intentObj.minCols is not None and len(intentObj.minCols) > 0:
         actualSQLStr += "MIN Columns: " + str(intentObj.minCols) + "\n"
+        sqlOpsDict["minCols"] = intentObj.minCols
     if intentObj.maxCols is not None and len(intentObj.maxCols) > 0:
         actualSQLStr += "MAX Columns: " + str(intentObj.maxCols) + "\n"
+        sqlOpsDict["maxCols"] = intentObj.maxCols
     if intentObj.sumCols is not None and len(intentObj.sumCols) > 0:
         actualSQLStr += "SUM Columns: " + str(intentObj.sumCols) + "\n"
+        sqlOpsDict["sumCols"] = intentObj.sumCols
     if intentObj.countCols is not None and len(intentObj.countCols) > 0:
         actualSQLStr += "COUNT Columns: " + str(intentObj.countCols) + "\n"
+        sqlOpsDict["countCols"] = intentObj.countCols
     if intentObj.selCols is not None and len(intentObj.selCols) > 0:
         actualSQLStr += "SEL Columns: " + str(intentObj.selCols) + "\n"
+        sqlOpsDict["selCols"] = intentObj.selCols
     if intentObj.groupByCols is not None and len(intentObj.groupByCols) > 0:
         actualSQLStr += "GROUP BY Columns: " + str(intentObj.groupByCols) + "\n"
+        sqlOpsDict["groupByCols"] = intentObj.groupByCols
     if intentObj.orderByCols is not None and len(intentObj.orderByCols) > 0:
         actualSQLStr += "ORDER BY Columns: " + str(intentObj.orderByCols) + "\n"
+        sqlOpsDict["orderByCols"] = intentObj.orderByCols
     if intentObj.havingCols is not None and len(intentObj.havingCols) > 0:
         actualSQLStr += "HAVING Columns: " + str(intentObj.havingCols) + "\n"
+        sqlOpsDict["havingCols"] = intentObj.havingCols
     if intentObj.limit is not None:
         actualSQLStr += "Limit: "+str(intentObj.limit)+"\n"
+        sqlOpsDict["limit"] = intentObj.limit
     if intentObj.joinPreds is not None and len(intentObj.joinPreds) > 0:
         actualSQLStr += "JOIN PRED ColPairs: " + str(intentObj.joinPreds) + "\n"
-    return actualSQLStr
+        sqlOpsDict["joinPreds"] = intentObj.joinPreds
+    return sqlOpsDict
 
 
 def printSQLOps(intentObj):
@@ -398,7 +407,10 @@ def populateSQLOpFromType(intentObj, sqlOp, opType):
     if opType == "querytype":
         intentObj.queryType = sqlOp
     elif opType == "querytime":
-        intentObj.queryTime = sqlOp
+        if intentObj.queryTime == None:
+            intentObj.queryTime = sqlOp
+        else:
+            intentObj.queryTime = intentObj.queryTime +","+ sqlOp
     elif opType == "table":
         intentObj.tables.append(sqlOp)
     elif opType == "project":
@@ -428,9 +440,11 @@ def populateSQLOpFromType(intentObj, sqlOp, opType):
     elif opType == "timeoffset":
         intentObj.timeOffset=sqlOp
     elif opType == "timerange":
-        intentObj.timeRange=sqlOp
+        if intentObj.timeRange==None:
+            intentObj.timeRange=sqlOp
     elif opType == "querygran":
-        intentObj.queryGran=sqlOp
+        if intentObj.queryGran==None:
+            intentObj.queryGran=sqlOp
     else:
         print("OpError !!")
     return intentObj
@@ -461,6 +475,13 @@ def createSQLTableFromIntentBits(intentObj):
 
 def createSQLFromIntentBits(intentObj):
     # 遍历intentObj中的newSetBitPosList
+    topKTables = intentObj.schemaDicts.tableBitMapSize
+    topNQuerys = intentObj.schemaDicts.topQueryN
+    intentObjArrays = [[None for _ in range(topNQuerys)] for _ in range(topKTables)]
+    for i in range(topKTables):
+        for j in range(topNQuerys):
+            intentObjArrays[i][j] = deepcopy(intentObj)  # 初始化每个查询
+            (intentObjArrays[i][j]).tables.append(intentObj.schemaDicts.tableOrderDict[i])
     for setBitIndex in intentObj.newSetBitPosList:
         # 如果setBitIndex在intentObj的schemaDicts.forwardMapBitsToOps中
         if setBitIndex in intentObj.schemaDicts.forwardMapBitsToOps:
@@ -471,14 +492,18 @@ def createSQLFromIntentBits(intentObj):
             sqlOp = opTokens[0]
             opType = opTokens[1]
             if intentObj.schemaDicts.embeddingType=="table" and len(opTokens)==3:
-                #todo
-                opPos = opTokens[2]
+                #todo 第三位为索引位：tableIndex,queryIndex
+                opTableAndQueryIndexs = opTokens[2].split(',')
+                tableIndex=int(opTableAndQueryIndexs[0])
+                queryIndex=int(opTableAndQueryIndexs[1])
+                intentObjArrays[tableIndex][queryIndex] = populateSQLOpFromType(
+                    intentObjArrays[tableIndex][queryIndex], sqlOp, opType)
             else:
                 # 根据opType调用populateSQLOpFromType函数，得到新的intentObj
                 intentObj = populateSQLOpFromType(intentObj, sqlOp, opType)
     # printSQLOps(intentObj)
     # 返回新的intentObj
-    return intentObj
+    return intentObjArrays
 
 def setBit(opDimBit, intentObj):
     revBitPos = intentObj.schemaDicts.allOpSize - 1 - opDimBit
@@ -760,12 +785,29 @@ def regenerateSQLOrig(topKCandidateVector, schemaDicts):
     newSetBitPosList = []
     # 遍历setBitPosList中的每个元素
     for bitPos in setBitPosList:
-        newBitPos = schemaDicts.allOpSize - 1 - bitPos # because 1s appear in reverse, no need to prune the extra padded bits
+        newBitPos = schemaDicts.allOpSize - 1 - bitPos # because 1s appear in reverse, no need to prune the extra
+        # padded bits
         newSetBitPosList.append(newBitPos)
     #print newSetBitPosList
     intentObj = SQLForBitMapIntent(schemaDicts, topKCandidateVector, newSetBitPosList)
-    intentObj = createSQLFromIntentBits(intentObj)
-    return intentObj
+    intentObjs = createSQLFromIntentBits(intentObj)
+    return np.array(intentObjs)
+def round_to_eight_diff(n: int) -> int:
+    """计算正整数向上取整到最近的8的倍数后的差值
+    Args:
+        n: 需要处理的正整数 (n >= 1)
+    Returns:
+        原始值与向上取整结果的差值
+    Examples:
+        >>> round_to_eight_diff(5)
+        3    # 5 → 8 (差3)
+        >>> round_to_eight_diff(15)
+        1    # 15 → 16 (差1)
+        >>> round_to_eight_diff(8)
+        0    # 8 → 8 (差0)
+    """
+    remainder = n % 8
+    return 0 if remainder == 0 else 8 - remainder
 
 
 def createSQLFromIntentBitMapSanityCheck(schemaDicts, intentObjDict):

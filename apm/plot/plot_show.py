@@ -77,7 +77,7 @@ if __name__ == "__main__":
     set_font()
 
     # 输入参数（请修改以下参数）
-    file_path = "/home/xhh/db_workspace/IntentPredictionEval/apm/plot/5minute_1table_RNN_F1.xlsx"  # 替换为你的文件路径
+    file_path = "/apm/plot/5minute_1table_RNN_F1.xlsx"  # 替换为你的文件路径
     x_col = "迭代"  # 替换为你的X轴列名
     y_col = "F1得分"  # 替换为你的Y轴列名
 
