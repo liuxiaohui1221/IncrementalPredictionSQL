@@ -10,8 +10,8 @@ app = Flask(__name__)
 @app.route('/predict', methods=['POST'])
 def predict():
     queryWindowIntent = request.json['input']
-    result = predictAndInverseVectorToSQL(queryWindowIntent, predictor, configDict, threshold)
-    return jsonify({"result": result})
+    result,topKCandidateVector = predictAndInverseVectorToSQL(queryWindowIntent, predictor, configDict, threshold)
+    return jsonify(result)
 
 if __name__ == '__main__':
     configFile = "/home/xhh/db_workspace/IncrementalPredictionSQL/config/window/APM_Window_Novel_RNN_singularity_configFile.txt"
@@ -22,5 +22,5 @@ if __name__ == '__main__':
     configDict = parseConfig.parseConfigFile(args.config)
     # 初始化预测器（指定模型目录）
     predictor = LatestModelPredictor("/home/xhh/db_workspace/IncrementalPredictionSQL/apm/models/")
-    threshold = float(configDict["ACCURACY_THRESHOL"])
+    threshold = float(configDict["ACCURACY_THRESHOLD"])
     app.run(host='0.0.0.0', port=6666)

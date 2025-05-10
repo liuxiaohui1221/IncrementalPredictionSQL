@@ -105,10 +105,10 @@ class SchemaDicts:
             self.forwardMapBitsToOps = {}
             self.backwardMapOpsToBits = {}
             (self.forwardMapBitsToOps, self.backwardMapOpsToBits) = populateBiDirectionalLookupMap(self)
-        print("allOpSize: ", self.allOpSize)
-        print("tableBitMapSize: ", self.tableBitMapSize)
-        print("allColumnsSize: ", self.allColumnsSize)
-        print("limitBitMapSize: ", self.limitBitMapSize)
+            print("allOpSize: ", self.allOpSize)
+        # print("tableBitMapSize: ", self.tableBitMapSize)
+        # print("allColumnsSize: ", self.allColumnsSize)
+        # print("limitBitMapSize: ", self.limitBitMapSize)
         # + self.joinPredicatesBitMapSize)
 
 

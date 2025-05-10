@@ -17,7 +17,7 @@ low_cardinality_str_fields = [
     'type', 'group', 'appid', 'appsysid', 'agent',
     'path', 'method', 'root_appid', 'pappid', 'pappsysid',
     'pagent', 'pagent_ip', 'uevent_model', 'uevent_id', 'user_id', 'session_id',
-    'host', 'ip_addr', 'province', 'city', 'page_id', 'page_group', 'tag',
+    'host', 'ip_addr', 'province', 'city', 'page_id', 'page_group', 'tag', 'code'
 ]
 low_cardinality_int_fields = [
 'biz', 'fail', 'httperr', 'neterr', 'err', 'tolerated', 'frustrated','exception','service_type','papp_type'

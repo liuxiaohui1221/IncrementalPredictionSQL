@@ -156,7 +156,7 @@ def predictAndInverseVectorToSQL(queryIntent, predictor, configDict, threshold):
         outputSQLDict = inverseVectorToSQL(topKCandidateVector, schemaDicts)
     except Exception as e:
         print(f"预测失败: {str(e)}")
-    return outputSQLDict
+    return outputSQLDict,topKCandidateVector
 
 
 if __name__ == "__main__":
@@ -187,7 +187,7 @@ if __name__ == "__main__":
         queryId = sessAndQueryID.split(',')[1]
         print("Current window SQL：\n",sessionStreamSqlDict[sessAndQueryID])
         print("Current window SQL ops:\n",inverseVectorToSQL(queryIntent, schemaDicts))
-        outputPredictNextSQLStr = predictAndInverseVectorToSQL(queryIntent, predictor, configDict, threshold)
+        outputPredictNextSQLStr,topKCandidateVector = predictAndInverseVectorToSQL(queryIntent, predictor, configDict, threshold)
         # nextIntent = predictor.predict(queryIntent)
         nextKey = sessId + ',' + str(int(queryId) + 1)
         if nextKey in sessionStreamSqlDict:
